@@ -1,15 +1,11 @@
 --Last Update: Axel II refight bugfix & PC Abilities for Ping & Tron
 
---Note: Cycle through growth abilities by pressing Square with cursor in their respective form
---Note: Add all boosts by pressing Hyena combination (L2+R2+Triangle) with cursor in Attack on 1st page
---Note: The computer does nothing. You'll figure out how to get to CoR.
-
 LUAGUI_NAME = "GoA Practice Build"
 LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.6'
+local VersionNum = 'GoA Version 1.52.7'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -50,6 +46,9 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	NxtGauge = 0x34
 	Menu1    = 0x1C5FF18 --Menu 1 (main command menu)
 	NextMenu = 0x4
+	print('Cycle through growth abilities by pressing Square with cursor in their respective form')
+	print('Add all boosts by pressing Hyena combination (L2+R2+Triangle) with cursor in Attack on 1st page')
+	print("The computer does nothing. You'll figure out how to get to CoR.")
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	if ENGINE_VERSION < 4.1 then
 		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
@@ -89,6 +88,9 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	NxtGauge = 0x48
 	Menu1    = 0x2A0E7D0 - 0x56450E
 	NextMenu = 0x8
+	ConsolePrint('Cycle through growth abilities by pressing Square with cursor in their respective form')
+	ConsolePrint('Add all boosts by pressing Hyena combination (L2+R2+Triangle) with cursor in Attack on 1st page')
+	ConsolePrint("The computer does nothing. You'll figure out how to get to CoR.")
 end
 Slot2  = Slot1 - NextSlot
 Slot3  = Slot2 - NextSlot
@@ -142,25 +144,47 @@ if Platform == 'PS2' and ReadInt(ARD) == 0x01524142 and Subfile <= ReadInt(ARD+4
 	elseif Type == 'String' then
 		WriteString(Address,Value)
 	end
-elseif Platform == 'PC' and ReadIntA(ARD) == 0x01524142 and Subfile <= ReadIntA(ARD+4) then
+elseif Platform == 'PC' then
 	local x = ARD&0xFFFFFF000000
-	local y = ReadIntA(Subpoint)&0xFFFFFF
-	Address = x + y + Offset
-	if Type == 'Short' then
-		WriteShortA(Address,Value)
-	elseif Type == 'Float' then
-		WriteFloatA(Address,Value)
-	elseif Type == 'Int' then
-		WriteIntA(Address,Value)
-	elseif Type == 'String' then
-		WriteStringA(Address,Value)
+	if ENGINE_VERSION < 5.0 then --LuaBackend
+		if ReadIntA(ARD) == 0x01524142 and Subfile <= ReadIntA(ARD+4) then
+			local y = ReadIntA(Subpoint)&0xFFFFFF
+			Address = x + y + Offset
+			if Type == 'Short' then
+				WriteShortA(Address,Value)
+			elseif Type == 'Float' then
+				WriteFloatA(Address,Value)
+			elseif Type == 'Int' then
+				WriteIntA(Address,Value)
+			elseif Type == 'String' then
+				WriteStringA(Address,Value)
+			end
+		end
+	else --LuaFrontend
+		if ReadInt(ARD,true) == 0x01524142 and Subfile <= ReadInt(ARD+4,true) then
+			local y = ReadInt(Subpoint,true)&0xFFFFFF
+			Address = x + y + Offset
+			if Type == 'Short' then
+				WriteShort(Address,Value,true)
+			elseif Type == 'Float' then
+				WriteFloat(Address,Value,true)
+			elseif Type == 'Int' then
+				WriteInt(Address,Value,true)
+			elseif Type == 'String' then
+				WriteString(Address,Value,true)
+			end
+		end
 	end
 end
 end
 
 function BitOr(Address,Bit,Abs)
 if Abs and Platform == 'PC' then
-	WriteByteA(Address,ReadByte(Address)|Bit)
+	if ENGINE_VERSION < 5.0 then
+		WriteByteA(Address,ReadByte(Address)|Bit)
+	else
+		WriteByte(Address,ReadByte(Address)|Bit,true)
+	end
 else
 	WriteByte(Address,ReadByte(Address)|Bit)
 end
@@ -168,7 +192,11 @@ end
 
 function BitNot(Address,Bit,Abs)
 if Abs and Platform == 'PC' then
-	WriteByteA(Address,ReadByte(Address)&~Bit)
+	if ENGINE_VERSION < 5.0 then
+		WriteByteA(Address,ReadByte(Address)&~Bit)
+	else
+		WriteByte(Address,ReadByte(Address)&~Bit,true)
+	end
 else
 	WriteByte(Address,ReadByte(Address)&~Bit)
 end
