@@ -36,7 +36,6 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	BtlEnd = 0x1D490C0 --Something about end-of-battle camera
 	TxtBox = 0x1D48D54 --Last Displayed Textbox
 	DemCln = 0x1D48DEC --Demyx Clone Status
-	OogBox = 0x1B11B7C --Oogie Boogie Present Count
 	MSNLoad  = 0x04FA440
 	Slot1    = 0x1C6C750 --Unit Slot 1
 	NextSlot = 0x268
@@ -78,7 +77,6 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	BtlEnd = 0x2A0D3A0 - 0x56450E
 	TxtBox = 0x074BC70 - 0x56450E
 	DemCln = 0x2A0CF74 - 0x56450E
-	OogBox = 0x25978AC - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
 	Slot1    = 0x2A20C58 - 0x56450E
 	NextSlot = 0x278
@@ -3462,9 +3460,6 @@ elseif World == 0x0E then --Halloween Town
 		Spawn('Short',0x13,0x144,0x1A)
 		Spawn('Short',0x13,0x146,0x16)
 		WriteShort(Sve+2,0x16)
-		if ReadInt(Slot4+8) > 0 then
-			WriteByte(OogBox,11)
-		end
 	elseif Room == 0x0A then
 		if Events(0x3E,0x3E,0x3E) then --Lock, Shock, Barrel
 			Spawn('Short',0x0A,0x10A,0x04)

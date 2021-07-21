@@ -38,7 +38,6 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	BtlEnd = 0x1D490C0 --Something about end-of-battle camera
 	TxtBox = 0x1D48D54 --Last Displayed Textbox
 	DemCln = 0x1D48DEC --Demyx Clone Status
-	OogBox = 0x1B11B7C --Oogie Boogie Present Count
 	MSNLoad  = 0x04FA440
 	Slot1    = 0x1C6C750 --Unit Slot 1
 	NextSlot = 0x268
@@ -77,7 +76,6 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	BtlEnd = 0x2A0D3A0 - 0x56450E
 	TxtBox = 0x074BC70 - 0x56450E
 	DemCln = 0x2A0CF74 - 0x56450E
-	OogBox = 0x25978AC - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
 	Slot1    = 0x2A20C58 - 0x56450E
 	NextSlot = 0x278
@@ -1516,10 +1514,6 @@ if Place == 0x090E and Events(0x37,0x37,0x37) then
 	WriteInt(Slot2+8,0)
 	WriteInt(Slot3+8,0)
 	WriteInt(Slot4+8,0)
-end--]]
---[["Fast" Oogie
-if Place == 0x090E and Events(0x37,0x37,0x37) and math.max(ReadInt(Slot4+8),ReadInt(Slot3+8),ReadInt(Slot2+8)) > 0 then
-	WriteByte(OogBox,11)
 end--]]
 --[[Fast Gift Wrapping
 if Place == 0x0A0E and Events(0x3F,0x3F,0x3F) then
