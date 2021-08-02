@@ -1,17 +1,19 @@
---Last Update: Axel II refight bugfix & PC Abilities for Ping & Tron
+--RAM Version
+--Last Update: Minor Optimizations
+--Todo: GoA portal color & Mining Area warps (CoR skip 2nd part)
 
 LUAGUI_NAME = "GoA Practice Build"
 LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.7'
+local VersionNum = 'GoA Version 1.52.8'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
 	end
 	print(VersionNum)
-	Platform = 'PS2'
+	Platform = 0
 	Now = 0x032BAE0 --Current Location
 	Sve = 0x1D5A970 --Saved Location
 	BGM = 0x0347D34 --Background Music
@@ -53,7 +55,7 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
 	end
 	ConsolePrint(VersionNum,0)
-	Platform = 'PC'
+	Platform = 1
 	Now = 0x0714DB8 - 0x56450E
 	Sve = 0x2A09C00 - 0x56450E
 	BGM = 0x0AB8504 - 0x56450E
@@ -130,7 +132,7 @@ end
 function Spawn(Type,Subfile,Offset,Value)
 local Subpoint = ARD + 0x08 + 0x10*Subfile
 local Address
-if Platform == 'PS2' and ReadInt(ARD) == 0x01524142 and Subfile <= ReadInt(ARD+4) then
+if Platform == 0 and ReadInt(ARD) == 0x01524142 and Subfile <= ReadInt(ARD+4) then
 	--Exclusions on Crash Spots in PCSX2-EX
 	Address = ReadInt(Subpoint) + Offset
 	if Type == 'Short' then
@@ -142,7 +144,7 @@ if Platform == 'PS2' and ReadInt(ARD) == 0x01524142 and Subfile <= ReadInt(ARD+4
 	elseif Type == 'String' then
 		WriteString(Address,Value)
 	end
-elseif Platform == 'PC' then
+elseif Platform == 1 then
 	local x = ARD&0xFFFFFF000000
 	if ENGINE_VERSION < 5.0 then --LuaBackend
 		if ReadIntA(ARD) == 0x01524142 and Subfile <= ReadIntA(ARD+4) then
@@ -177,7 +179,7 @@ end
 end
 
 function BitOr(Address,Bit,Abs)
-if Abs and Platform == 'PC' then
+if Abs and Platform == 1 then
 	if ENGINE_VERSION < 5.0 then
 		WriteByteA(Address,ReadByte(Address)|Bit)
 	else
@@ -189,7 +191,7 @@ end
 end
 
 function BitNot(Address,Bit,Abs)
-if Abs and Platform == 'PC' then
+if Abs and Platform == 1 then
 	if ENGINE_VERSION < 5.0 then
 		WriteByteA(Address,ReadByte(Address)&~Bit)
 	else
@@ -221,9 +223,9 @@ end
 
 function Menu(Pointer)
 local CurMenu
-if Platform == 'PS2' then
+if Platform == 0 then
 	CurMenu = ReadByte(ReadInt(Pointer))
-elseif Platform == 'PC' then
+elseif Platform == 1 then
 	CurMenu = ReadByteA(ReadLong(Pointer))
 end
 return CurMenu
@@ -231,7 +233,7 @@ end
 
 function Buttons()
 local Input
-if Platform == 'PS2' then
+if Platform == 0 then
 	Input = ReadShort(0x034D45C)
 	if Input == 0xFEFF then
 		return 'L2'
@@ -242,7 +244,7 @@ if Platform == 'PS2' then
 	elseif Input == 0xECFF then
 		return 'Hyena'
 	end
-elseif Platform == 'PC' then
+elseif Platform == 1 then
 	Input = ReadLong(0x29F89B0-0x56450E)
 	if Input == 0x400000000 then
 		return 'L2'
@@ -268,9 +270,9 @@ if true then --Define current values for common addresses
 	Evt    = ReadShort(Now+0x08)
 	PrevPlace = ReadShort(Now+0x30)
 	MSN    = MSNLoad + (ReadInt(MSNLoad+4)+1) * 0x10
-	if Platform == 'PS2' then
+	if Platform == 0 then
 		ARD = ReadInt(0x034ECF4) --Base ARD Address
-	elseif Platform == 'PC' then
+	elseif Platform == 1 then
 		ARD = ReadLong(0x2A0CEE8 - 0x56450E) --Base ARD Address
 		if GetHertz() < 240 then
 			SetHertz(240)
@@ -326,9 +328,9 @@ end
 if Place == 0x0102 and Events(0x34,0x34,0x34) then --Opening Cutscene
 	WriteShort(Save+0x03D0,0x01) --Station of Serenity MAP (Dream Weapons)
 	WriteShort(Save+0x03D4,0x01) --Station of Serenity EVT
-	if Platform == 'PS2' then
+	if Platform == 0 then
 		Warp(0x02,0x20,0x32,0x01,0x00,0x01) --Not warping here on PS2 causes freeze after skipping GoA Activation scene
-	elseif Platform == 'PC' then
+	elseif Platform == 1 then
 		Spawn('Short',0x03,0x300,0x01) --Day 1 Start -> Station of Serenity Weapons
 		Spawn('Short',0x03,0x304,0x20)
 		Spawn('Short',0x03,0x306,0x32)
@@ -1132,7 +1134,7 @@ if Place == 0x1A04 then
 	elseif Btl == 4 then
 		if RNG == 1 then
 			WriteShort(Music,0x90) --This is Halloween
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				WriteShort(Costume+6,0x05F)
 				WriteString(Obj0+0x013F0,'P_EX100_NM\0')
 				WriteString(Obj0+0x01450,'P_EX100_NM_BTLF\0')
@@ -1143,12 +1145,12 @@ if Place == 0x1A04 then
 				WriteString(Obj0+0x016F0,'P_EX020_NM\0')
 				WriteString(Obj0+0x01750,'P_EX030_NM\0')
 				WriteString(Obj0+0x291D0,'P_EX100_NM_KH1F\0')
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				WriteArray(Costume,ReadArray(Sys3+0x15CAC,18))
 			end
 		elseif RNG == 2 then
 			WriteShort(Music,0x40) --What a Surprise?!
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				WriteShort(Costume+6,0x060)
 				WriteString(Obj0+0x013F0,'P_EX100_XM\0')
 				WriteString(Obj0+0x01450,'P_EX100_XM_BTLF\0')
@@ -1159,7 +1161,7 @@ if Place == 0x1A04 then
 				WriteString(Obj0+0x016F0,'P_EX020_XM\0')
 				WriteString(Obj0+0x01750,'P_EX030_XM\0')
 				WriteString(Obj0+0x291D0,'P_EX100_XM_KH1F\0')
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				WriteArray(Costume,ReadArray(Sys3+0x15CE0,18))
 			end
 			WriteShort(Costume+6,0x060) --Santa Jack Skellington
@@ -1826,7 +1828,7 @@ if Place == 0x1A04 then
 			WriteShort(Music,0x8F) --Mickey Mouse Club March
 		elseif RNG == 2 then
 			WriteShort(Music,0xBD) --Monochrome Dreams
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				WriteString(Obj0+0x013F0,'P_EX100_WI\0')
 				WriteString(Obj0+0x01450,'P_EX100_WI_BTLF\0')
 				WriteString(Obj0+0x014B0,'P_EX100_WI_MAGF\0')
@@ -1838,7 +1840,7 @@ if Place == 0x1A04 then
 				WriteString(Obj0+0x01750,'P_WI030\0')
 				WriteString(Obj0+0x01770,'P_WI030.mset\0')
 				WriteString(Obj0+0x291D0,'P_EX100_WI_KH1F\0')
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				WriteArray(Costume,ReadArray(Sys3+0x15F1C,18))
 			end
 		end
@@ -1910,7 +1912,7 @@ if Place == 0x1A04 then
 		end
 	elseif Btl == 12 then
 		WriteShort(Music,0x87) --Space Paranoids
-		if Platform == 'PS2' then
+		if Platform == 0 then
 			WriteShort(Costume+6,0x2D4)
 			WriteString(Obj0+0x013F0,'P_EX100_TR\0')
 			WriteString(Obj0+0x01450,'P_EX100_TR_BTLF\0')
@@ -1921,7 +1923,7 @@ if Place == 0x1A04 then
 			WriteString(Obj0+0x016F0,'P_EX020_TR\0')
 			WriteString(Obj0+0x01750,'P_EX030_TR\0')
 			WriteString(Obj0+0x291D0,'P_EX100_TR_KH1F\0')
-		elseif Platform == 'PC' then
+		elseif Platform == 1 then
 			WriteArray(Costume,ReadArray(Sys3+0x15EE8,18))
 		end
 		WriteInt(Party,0x83020100)
@@ -2265,9 +2267,9 @@ if Place == 0x1A04 then
 	end
 	if ReadByte(Save+0x3599) == 0 then
 		if CurMenu2 == 0 and Menu(Menu1) == 0 then --Page 1
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				Cursor = ReadByte(0x1C5F5C0)
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				Cursor = ReadByte(0x2A0DD7C-0x56450E)
 			end
 			if Cursor == 0 and Buttons() == 'Hyena' then
@@ -2283,9 +2285,9 @@ if Place == 0x1A04 then
 				Increment(Slot1+0x1B2,1,3,9)
 			end
 		elseif CurMenu2 == 1 then --Magic
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				Cursor = ReadByte(0x1C5F634)
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				Cursor = ReadByte(0x2A0DDFC-0x56450E)
 			end
 			if Cursor == 0 then --Fire
@@ -2302,9 +2304,9 @@ if Place == 0x1A04 then
 				Increment(Save+0x35D0,1,1,3)
 			end
 		elseif CurMenu2 == 3 then --Drive
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				Cursor = ReadShort(0x1C5F71C)
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				Cursor = ReadByte(0x2A0DEFC-0x56450E)
 			end
 			if Cursor == 0 and Btl ~= 13 then --Valor
@@ -2366,9 +2368,9 @@ if Place == 0x1A04 then
 		elseif CurMenu2 == 7 then --Summon
 			Increment(Save+0x3526,1,1,7)
 		elseif CurMenu2 == 8 then --Party
-			if Platform == 'PS2' then
+			if Platform == 0 then
 				Cursor = ReadShort(0x1C5F954)
-			elseif Platform == 'PC' then
+			elseif Platform == 1 then
 				Cursor = ReadByte(0x2A0E17C-0x56450E)
 			end
 			if Cursor == 0 then --Donald
@@ -2555,7 +2557,7 @@ end
 if Place ~= 0x1A04 and ReadByte(Save+0x1CF8) ~= 0 then
 	WriteByte(Save+0x1CF8,0)
 	WriteArray(Sys3+0x159A0,ReadArray(Sys3+0x15868,18)) --Revert Costume
-	if Platform == 'PS2' then
+	if Platform == 0 then
 		WriteString(Obj0+0x013F0,'P_EX100\0')
 		WriteString(Obj0+0x01450,'P_EX100_BTLF\0')
 		WriteString(Obj0+0x014B0,'P_EX100_MAGF\0')
