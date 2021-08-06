@@ -2,7 +2,7 @@
 --Last Update: Minor Optimizations
 --Todo: GoA portal color & Mining Area warps (CoR skip 2nd part)
 
-LUAGUI_NAME = "GoA Practice Build"
+LUAGUI_NAME = "GoA RAM Practice Build"
 LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
@@ -287,7 +287,7 @@ end
 
 function NewGame()
 --Before New Game
-if Place == 0xFFFF or Place == 0x0101 or (Place == 0x0102 and Events(0x34,0x34,0x34)) then --In Main Menu, Loop Demo, or Opening
+if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 	WriteShort(Btl0+0x312E6,0x01A1) --Auto Limit (Auron)
 	WriteShort(Btl0+0x314EA,0x01A1) --Auto Limit (Beast)
 	WriteShort(Btl0+0x315EA,0x01A1) --Auto Limit (Simba)

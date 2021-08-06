@@ -1,7 +1,7 @@
 --RAM Version
 --Last Update: Minor Optimizations
 
-LUAGUI_NAME = 'GoA Rando RAM Build'
+LUAGUI_NAME = 'GoA RAM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with the Randomizer.'
 
@@ -281,7 +281,7 @@ end
 
 function NewGame()
 --Before New Game
-if Place == 0xFFFF or Place == 0x0101 or (Place == 0x0102 and Events(0x34,0x34,0x34)) then --In Main Menu, Loop Demo, or Opening
+if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 	--Unequip Auron's Auto Limit
 	if ReadShort(Btl0+0x312E6) == 0x81A1 then
 		WriteShort(Btl0+0x312E6,0x01A1)
@@ -3428,8 +3428,9 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 		end
 	end
 	if ReadShort(Sys3+0xC0CE) == 0x35 then --STT BGM
+		local BaseDefaultBGM = Sys3 + 0xC0CC
 		for i = 0x00,0x29 do
-			local DefaultBGM = Sys3 + 0xC0CC + 0x40*i
+			local DefaultBGM = BaseDefaultBGM + 0x40*i
 			if ReadShort(DefaultBGM+2) == 0x35 then
 				WriteShort(DefaultBGM+0x0,0x76) --Lazy Afternoons
 				WriteShort(DefaultBGM+0x2,0x77) --Sinister Sundowns
@@ -3440,8 +3441,9 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 			end
 		end
 	elseif ReadByte(Save+0x3FF5) == 6 and ReadByte(Save+0x1CFE) == 0 and ReadShort(Sys3+0xC0CC) == 0x76 then --Day 6 & STT Not Cleared
+		local BaseDefaultBGM = Sys3 + 0xC0CC
 		for i = 0x00,0x29 do
-			local DefaultBGM = Sys3 + 0xC0CC + 0x40*i
+			local DefaultBGM = BaseDefaultBGM + 0x40*i
 			if ReadShort(DefaultBGM+2) == 0x77 then
 				WriteShort(DefaultBGM+0x0,0) --Remove Field Music
 				WriteShort(DefaultBGM+0x4,0)
@@ -3486,8 +3488,9 @@ else --Restore Outside STT
 	end
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
 	if ReadShort(Sys3+0xC0CE) == 0x77 then --TT BGM
+		local BaseDefaultBGM = Sys3 + 0xC0CC
 		for i = 0x00,0x29 do
-			local DefaultBGM = Sys3 + 0xC0CC + 0x40*i
+			local DefaultBGM = BaseDefaultBGM + 0x40*i
 			if ReadShort(DefaultBGM+2) == 0x77 then
 				WriteShort(DefaultBGM+0x0,0x34) --The Afternoon Streets
 				WriteShort(DefaultBGM+0x2,0x35) --Working Together
