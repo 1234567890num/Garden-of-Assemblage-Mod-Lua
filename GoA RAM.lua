@@ -759,13 +759,17 @@ if true then --No Valor, Wisdom, Master, or Final
 	local CurSubmenu
 	if Platform == 0 then
 		CurSubmenu = ReadInt(Menu2)
-		CurSubmenu = ReadByte(CurSubmenu)
+		if CurSubmenu ~= 0 then
+			CurSubmenu = ReadByte(CurSubmenu)
+		end
 	elseif Platform == 1 then
 		CurSubmenu = ReadLong(Menu2)
-		if ENGINE_VERSION < 5.0 then
-			CurSubmenu = ReadByteA(CurSubmenu)
-		else
-			CurSubmenu = ReadByte(CurSubmenu,true)
+		if CurSubmenu ~= 0 then
+			if ENGINE_VERSION < 5.0 then
+				CurSubmenu = ReadByteA(CurSubmenu)
+			else
+				CurSubmenu = ReadByte(CurSubmenu,true)
+			end
 		end
 	end
 	if CurSubmenu == 7 and ReadByte(Save+0x36C0)&0x56 == 0x00 then --In Summon menu without Forms
