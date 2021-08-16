@@ -1,13 +1,13 @@
 --RAM Version
---Last Update: Minor Optimizations
---Todo: GoA portal color & Mining Area warps (CoR skip 2nd part)
+--Last Update: PC Form Icon with GoA Companion Bugfix & CoR Room Transitions
+--Todo: GoA portal color
 
 LUAGUI_NAME = "GoA RAM Practice Build"
 LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.8'
+local VersionNum = 'GoA Version 1.52.9'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -291,12 +291,6 @@ if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 	WriteShort(Btl0+0x312E6,0x01A1) --Auto Limit (Auron)
 	WriteShort(Btl0+0x314EA,0x01A1) --Auto Limit (Beast)
 	WriteShort(Btl0+0x315EA,0x01A1) --Auto Limit (Simba)
-	WriteShort(Btl0+0x31A6C,0x820E) --Dash
-	WriteShort(Btl0+0x31A6E,0x820D) --Running Tackle
-	WriteString(Obj0+0x13450,'SHOP_POINT\0') --Wallace -> Moogle
-	WriteString(Obj0+0x13470,'N_EX960_RTN.mset\0')
-	WriteShort(Sys3+0x16F40,0x001) --Stock Potion
-	WriteShort(Sys3+0x16F42,0x003) --Stock Ether
 	WriteShort(Btl0+0x2EB4C,500) --Fast MCP (50% Base HP)
 	WriteShort(Btl0+0x2EB8C,300) --Double Max Damage %
 	WriteShort(Btl0+0x2EB8E,100) --Double Min Damage %
@@ -309,6 +303,14 @@ if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 	-- Edge of Ultima
 	WriteShort(Sys3+0x13F16,0x1A5)  --Ability: MP Hastera
 	WriteShort(Sys3+0x13F18,0x0405) --Magic:4 Strength:5
+end
+if ReadShort(Btl0+0x31A6C) == 0 then --Vanilla Lion Sora Abilities
+	WriteShort(Btl0+0x31A6C,0x820E) --Dash
+	WriteShort(Btl0+0x31A6E,0x820D) --Running Tackle
+	WriteString(Obj0+0x13450,'SHOP_POINT\0') --Wallace -> Moogle
+	WriteString(Obj0+0x13470,'N_EX960_RTN.mset\0')
+	WriteShort(Sys3+0x16F40,0x001) --Stock Potion
+	WriteShort(Sys3+0x16F42,0x003) --Stock Ether
 	--Party EXP Requirement
 	for Member = 0,12 do
 		local EXPAddress = Btl0 + 0x25928 + Member*0x634
@@ -2930,37 +2932,19 @@ elseif World == 0x04 then --Hollow Bastion
 		Spawn('Short',0x06,0x024,0x1A)
 		Spawn('Short',0x06,0x026,0x1A)
 		WriteShort(Sve+2,0x1A)
-	elseif Room == 0x15 then
-		if PrevPlace == 0x1804 then
-			if PrevBtl == 0x01 then --Mineshaft Heartless I
-				Warp(0x04,0x1A,0x18,0x02,0x0F,0x02)
-			elseif PrevBtl == 0x02 then --Mineshaft Heartless II
-				Warp(0x04,0x1A,0x16,0x02,0x0F,0x02)
-			end
-		elseif PrevPlace == 0x1604 then --Mining Area Valves
-			Warp(0x04,0x1A,0x01,0x02,0x0F,0x02)
-		end
-	elseif Room == 0x16 then
-		if PrevPlace == 0x1804 then --Mineshaft Heartless II
-			Warp(0x04,0x1A,0x16,0x02,0x0F,0x02)
-		elseif Events(0x01,0x01,0x01) then --Mining Area Valves
-			Spawn('Short',0x0F,0x032,0x04)
-			Spawn('Short',0x0F,0x034,0x1A)
-			Spawn('Short',0x0F,0x036,0x01)
-		end
+	elseif Room == 0x16 then --Mining Area Valves
+		Spawn('Short',0x03,0x024,0x011A) --Exit
+		Spawn('Short',0x04,0x024,0x011A)
+		Spawn('Short',0x05,0x024,0x011A)
+		BitNot(Save+0x1D25,0x02) --HB_FM_712_END
 	elseif Room == 0x18 then
-		if PrevPlace == 0x1904 then
-			if PrevBtl == 0x01 then --Transport to Remembrance Nobodies I
-				Warp(0x04,0x1A,0x15,0x02,0x0F,0x02)
-			elseif PrevBtl == 0x02 then --Transport to Remembrance Nobodies II
-				Warp(0x04,0x1A,0x17,0x02,0x0F,0x02)
-			elseif PrevBtl == 0x03 then --Transport to Remembrance Nobodies III
-				Warp(0x04,0x1A,0x19,0x02,0x0F,0x02)
-			end
-		elseif Events(0x02,0x01,0x01) then --Mineshaft Heartless I
+		if Events(0x02,0x01,0x01) then --Mineshaft Heartless I
 			Spawn('Short',0x12,0x02A,0x04)
 			Spawn('Short',0x12,0x02C,0x1A)
 			Spawn('Short',0x12,0x02E,0x18)
+			Spawn('Short',0x03,0x024,0x181A) --Exit
+			Spawn('Short',0x04,0x024,0x181A)
+			Spawn('Short',0x05,0x024,0x181A)
 			--Softlock Prevention
 			Spawn('Short',0x09,0x024,0x0018) --Door to Transport to Remembrance -> Mineshaft
 			Spawn('Short',0x09,0x026,0) --Approachable from All Sides
@@ -2971,20 +2955,28 @@ elseif World == 0x04 then --Hollow Bastion
 			Spawn('Short',0x12,0x066,0x04)
 			Spawn('Short',0x12,0x068,0x1A)
 			Spawn('Short',0x12,0x06A,0x16)
+			Spawn('Short',0x03,0x024,0x161A) --Exit
+			Spawn('Short',0x04,0x024,0x161A)
+			Spawn('Short',0x05,0x024,0x161A)
+			Spawn('Short',0x06,0x024,0x161A)
+			Spawn('Short',0x07,0x024,0x161A)
 		end
 	elseif Room == 0x19 then
 		if Events(0x00,0x01,0x01) then --Transport to Remembrance Nobodies I
 			Spawn('Short',0x0B,0x02A,0x04)
 			Spawn('Short',0x0B,0x02C,0x1A)
 			Spawn('Short',0x0B,0x02E,0x15)
+			Spawn('Short',0x03,0x024,0x151A) --Exit
 		elseif Events(0x00,0x02,0x02) then --Transport to Remembrance Nobodies II
 			Spawn('Short',0x0B,0x066,0x04)
 			Spawn('Short',0x0B,0x068,0x1A)
 			Spawn('Short',0x0B,0x06A,0x17)
+			Spawn('Short',0x03,0x024,0x171A) --Exit
 		elseif Events(0x00,0x03,0x03) then --Transport to Remembrance Nobodies III
 			Spawn('Short',0x0B,0x0AA,0x04)
 			Spawn('Short',0x0B,0x0AC,0x1A)
 			Spawn('Short',0x0B,0x0AE,0x19)
+			Spawn('Short',0x03,0x024,0x191A) --Exit
 		end
 	elseif Room == 0x20 then
 		if Events(0x73,0x73,0x73) then --Vexen

@@ -1,12 +1,12 @@
 --RAM Version
---Last Update: Minor Optimizations
+--Last Update: OC Demyx Bugfix, Music Code Optimizations, PC Form Icon with GoA Companion Bugfix
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with vanilla items.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.8'
+local VersionNum = 'GoA Version 1.52.9'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -346,15 +346,15 @@ if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 		WriteString(Obj0+0x2C050,'F_EX030_EH')
 		WriteString(Obj0+0x2C070,'F_EX030.mset')
 	end
-	--Change Form's Icons in PC From Analog Stick
-	if Platform == 1 then
-		WriteByte(Sys3+0x116DB,0x3B) --Valor
-		WriteByte(Sys3+0x116F3,0x3B) --Wisdom
-		WriteByte(Sys3+0x1170B,0x3B) --Limit
-		WriteByte(Sys3+0x11723,0x3B) --Master
-		WriteByte(Sys3+0x1173B,0x3B) --Final
-		WriteByte(Sys3+0x11753,0x3B) --Anti
-	end
+end
+--Change Form's Icons in PC From Analog Stick
+if Platform == 1 and ReadByte(Sys3+0x116DB) == 0x19 then
+	WriteByte(Sys3+0x116DB,0x3B) --Valor
+	WriteByte(Sys3+0x116F3,0x3B) --Wisdom
+	WriteByte(Sys3+0x1170B,0x3B) --Limit
+	WriteByte(Sys3+0x11723,0x3B) --Master
+	WriteByte(Sys3+0x1173B,0x3B) --Final
+	WriteByte(Sys3+0x11753,0x3B) --Anti
 end
 --Start New Game 1
 if Place == 0x0102 and Events(0x34,0x34,0x34) then --Opening Cutscene
@@ -1739,7 +1739,7 @@ elseif Place == 0x0106 and Events(Null,Null,0x02) then --The Reunion
 	WriteByte(Save+0x1D6F,4)
 elseif Place == 0x0306 and Events(Null,Null,0x05) then --Arriving in the Underworld
 	WriteByte(Save+0x1D6F,5)
-elseif Place == 0x1106 and Events(Null,Null,0x01) then --Sora and Friends vs. Demyx
+elseif Place == 0x1106 and Events(0x7B,0x7B,0x7B) then --Regained Power
 	WriteByte(Save+0x1D6F,6)
 elseif Place == 0x0806 and Events(Null,Null,0x01) then --Presistent Ol' Pete
 	WriteByte(Save+0x1D6F,7)
@@ -2514,11 +2514,8 @@ if ReadByte(Save+0x1D2F) == 8 then
 		Spawn('Float',0x02,0x134,pi/2) --Sora Rotation Y
 		Spawn('Float',0x02,0x164,700)  --Party 1 Position Z
 		Spawn('Float',0x02,0x174,pi/2) --Party 1 Rotation Y
-		if Events(Null,Null,0x00) then --Don't Change Music on Demyx Fight
-			WriteByte(BGM-4,0x91)  --Music Change (Vim & Vigor)
-			WriteByte(BGM,0x91)
-			WriteByte(BGM+12,0x91)
-		end
+		WriteShort(Sys3+0x0CD10,0x91) --Castle Gate Music: Vim & Vigor (Field)
+		WriteShort(Sys3+0x0CD12,0x91) --Castle Gate Music: Vim & Vigor (Fight)
 	end
 	if Place == 0x1A04 then
 		WriteInt(Save+0x3544,0x12020100) --Add Goofy
@@ -3383,29 +3380,10 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 			WriteShort(Save+0x24F0,Store) --Change Equipped Keyblade
 		end
 	end
-	if ReadShort(Sys3+0xC0CE) == 0x35 then --STT BGM
-		local BaseDefaultBGM = Sys3 + 0xC0CC
-		for i = 0x00,0x29 do
-			local DefaultBGM = BaseDefaultBGM + 0x40*i
-			if ReadShort(DefaultBGM+2) == 0x35 then
-				WriteShort(DefaultBGM+0x0,0x76) --Lazy Afternoons
-				WriteShort(DefaultBGM+0x2,0x77) --Sinister Sundowns
-				WriteShort(DefaultBGM+0x4,0x76)
-				WriteShort(DefaultBGM+0x6,0x77)
-				WriteShort(DefaultBGM+0x8,0x76)
-				WriteShort(DefaultBGM+0xA,0x77)
-			end
-		end
-	elseif ReadByte(Save+0x3FF5) == 6 and ReadByte(Save+0x1CFE) == 0 and ReadShort(Sys3+0xC0CC) == 0x76 then --Day 6 & STT Not Cleared
-		local BaseDefaultBGM = Sys3 + 0xC0CC
-		for i = 0x00,0x29 do
-			local DefaultBGM = BaseDefaultBGM + 0x40*i
-			if ReadShort(DefaultBGM+2) == 0x77 then
-				WriteShort(DefaultBGM+0x0,0) --Remove Field Music
-				WriteShort(DefaultBGM+0x4,0)
-				WriteShort(DefaultBGM+0x8,0)
-			end
-		end
+	if ReadByte(Save+0x3FF5) == 6 and ReadByte(Save+0x1CFE) == 0 then --Day 6 & STT Not Cleared
+		WriteByte(Save+0x23EE,2) --STT Music: Sinister Sundowns (No Field Music)
+	else
+		WriteByte(Save+0x23EE,0) --STT Music: Lazy Afternoons & Sinister Sundowns
 	end
 else --Restore Outside STT
 	BitOr(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Sora)
@@ -3443,20 +3421,7 @@ else --Restore Outside STT
 		WriteByte(Save+0x35D0,ReadByte(Save+0x35D0)+1)
 	end
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
-	if ReadShort(Sys3+0xC0CE) == 0x77 then --TT BGM
-		local BaseDefaultBGM = Sys3 + 0xC0CC
-		for i = 0x00,0x29 do
-			local DefaultBGM = BaseDefaultBGM + 0x40*i
-			if ReadShort(DefaultBGM+2) == 0x77 then
-				WriteShort(DefaultBGM+0x0,0x34) --The Afternoon Streets
-				WriteShort(DefaultBGM+0x2,0x35) --Working Together
-				WriteShort(DefaultBGM+0x4,0x34)
-				WriteShort(DefaultBGM+0x6,0x35)
-				WriteShort(DefaultBGM+0x8,0x34)
-				WriteShort(DefaultBGM+0xA,0x35)
-			end
-		end
-	end
+	WriteByte(Save+0x23EE,1)  --TT Music: The Afternoon Streets & Working Together
 end
 --Faster Twilight Thorn Reaction Commands
 if Place == 0x2202 and Events(0x9D,0x9D,0x9D) then
