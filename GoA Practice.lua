@@ -2275,9 +2275,9 @@ if Place == 0x1A04 then
 				Cursor = ReadByte(0x2A0DD7C-0x56450E)
 			end
 			if Cursor == 0 and Buttons() == 'Hyena' then
-				WriteByte(Save+0x3666,100) --Power Boost
-				WriteByte(Save+0x3667,100) --Magic Boost
-				WriteByte(Save+0x3668,100) --Defense Boost
+				WriteByte(Save+0x3666,99) --Power Boost
+				WriteByte(Save+0x3667,99) --Magic Boost
+				WriteByte(Save+0x3668,99) --Defense Boost
 				WriteByte(Save+0x3669,99)  --AP Boost
 			elseif Cursor == 1 then --Magic -> MP
 				Increment(Slot1+0x184,5,100,140)
