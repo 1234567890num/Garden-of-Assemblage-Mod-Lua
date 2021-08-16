@@ -506,9 +506,9 @@ if Place == 0x2002 then
 			WriteShort(Save+0x3130,0x19D) --MP Haste
 		end
 		--Starting Items
-		WriteByte(Save+0x3666,255) --Power Boost
-		WriteByte(Save+0x3667,255) --Magic Boost
-		WriteByte(Save+0x3668,255) --Defense Boost
+		WriteByte(Save+0x3666,99) --Power Boost
+		WriteByte(Save+0x3667,99) --Magic Boost
+		WriteByte(Save+0x3668,99) --Defense Boost
 		WriteByte(Save+0x3669,99) --AP Boost
 		if true then --Magic, Forms, Summons
 			BitOr(Save+0x36C0,0x5F) --Forms & Summons
