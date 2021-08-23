@@ -1,12 +1,12 @@
 --RAM Version
---Last Update: OC Demyx Bugfix, Music Code Optimizations, PC Form Icon with GoA Companion Bugfix
+--Last Update: Fixed typo preventing save warp to Postern before Ansem's Study
 
 LUAGUI_NAME = 'GoA RAM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with the Randomizer.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.9'
+local VersionNum = 'GoA Version 1.52.10'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -2384,7 +2384,7 @@ elseif ReadByte(Save+0x1D2F) == 2 and ReadByte(Save+0x35C1) > 0 then --4th Visit
 	WriteShort(Save+0x0650,0x02) --Marketplace EVT
 elseif Place == 0x0D04 and Events(Null,Null,0x02) then --Cid's Report
 	WriteByte(Save+0x1D2F,4)
-elseif Place == 0x0604 and Events(Null,Null,0x02) then --The Underground Corridor
+elseif Place == 0x0604 and Events(Null,Null,0x01) then --The Underground Corridor
 	WriteByte(Save+0x1D2F,5)
 elseif Place == 0x0504 and Events(Null,Null,0x06) then --
 	WriteByte(Save+0x1D2F,6)
