@@ -1,5 +1,5 @@
 --RAM Version
---Last Update: PC Form Icon with GoA Companion Bugfix & CoR Room Transitions
+--Last Update: Patch 1.0.0.8 Fixes
 --Todo: GoA portal color
 
 LUAGUI_NAME = "GoA RAM Practice Build"

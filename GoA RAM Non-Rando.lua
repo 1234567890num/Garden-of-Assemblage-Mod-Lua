@@ -1,5 +1,5 @@
 --RAM Version
---Last Update: Fixed typo preventing save warp to Postern before Ansem's Study
+--Last Update: Post-Final Fights & Patch 1.0.0.8 Fixes
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
