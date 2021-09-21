@@ -52,7 +52,7 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	end
 	ConsolePrint(VersionNum,0)
 	Platform = 1
-	Now = 0x0714DB8 - 0x56450E
+	Now = 0x0714DB8 - 0x56454E
 	Sve = 0x2A09C00 - 0x56450E
 	BGM = 0x0AB8504 - 0x56450E
 	Save = 0x09A7070 - 0x56450E
@@ -64,16 +64,16 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	Cntrl = 0x2A148A8 - 0x56450E
 	Timer = 0x0AB9010 - 0x56450E
 	Songs = 0x0B63534 - 0x56450E
-	GScre = 0x0728E90 - 0x56450E
-	GMdal = 0x0729024 - 0x56450E
+	GScre = 0x0728E90 - 0x56454E
+	GMdal = 0x0729024 - 0x56454E
 	GKill = 0x0AF4906 - 0x56450E
-	CamTyp = 0x0716A58 - 0x56450E
+	CamTyp = 0x0716A58 - 0x56454E
 	CutNow = 0x0B62758 - 0x56450E
 	CutLen = 0x0B62774 - 0x56450E
 	CutSkp = 0x0B6275C - 0x56450E
 	BtlTyp = 0x2A0EAC4 - 0x56450E
 	BtlEnd = 0x2A0D3A0 - 0x56450E
-	TxtBox = 0x074BC70 - 0x56450E
+	TxtBox = 0x074BC70 - 0x56454E
 	DemCln = 0x2A0CF74 - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
 	Slot1    = 0x2A20C58 - 0x56450E
@@ -214,9 +214,9 @@ if Platform == 0 then
 	end
 elseif Platform == 1 then
 	if Toggle then
-		WriteFloat(0x07151D4 - 0x56450E,2) --Faster Speed
+		WriteFloat(0x07151D4 - 0x56454E,2) --Faster Speed
 	else
-		WriteFloat(0x07151D4 - 0x56450E,1) --Normal Speed		
+		WriteFloat(0x07151D4 - 0x56454E,1) --Normal Speed		
 	end
 end
 end
@@ -1066,7 +1066,20 @@ elseif Place == 0x1212 and Events(Null,Null,0x03) then --The Door to Kingdom Hea
 	WriteByte(Save+0x1EDE,5) --Post-Story Save
 	WriteShort(Save+0x1B24,0x03) --Memory's Skyscraper BTL
 	BitOr(Save+0x1ED6,0x80) --EH_JIMMNY_FULL_OPEN
-elseif Place == 0x0001 and Events(0x3A,0x3A,0x3A) then --The Door to Light
+elseif Place == 0x1412 then --Xemnas II
+	if ReadInt(Slot3) == 1 then --Laser Dome Skip
+		WriteInt(Slot3,0)
+	elseif ReadByte(Pause) == 2 then --Enable Pause
+		WriteByte(Pause,0)
+	end
+	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
+	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
+elseif Place == 0x0001 then --Post Xemnas II Cutscenes
+	if ReadByte(Pause) == 2 then --Enable Pause
+		WriteByte(Pause,0)
+	end
+	WriteArray(Save+0x1B22,ReadArray(Save+0x1BA6,6)) --Load Memory Skyscraper Spawn ID
+	WriteArray(Save+0x1B7C,ReadArray(Save+0x1BAC,6)) --Load The Altar of Naught Spawn ID
 	WriteInt(Save+0x000C,0x321A04) --Post-Game Save at Garden of Assemblage
 	BitNot(Save+0x1CEE,0x0C) --TT_TT21 (Computer Room Flag Fix)
 end
@@ -1132,16 +1145,6 @@ end
 if Place == 0x1D12 then
 	Spawn('Short',0x03,0x038,0x5C)
 end--]]
---Laser Dome Skip
-if Place == 0x1412 and ReadShort(Slot3) == 1 then --Boss in Xemnas II's arena have 1 HP
-	WriteShort(Slot3,0) --Change to 0 HP
-end
---Post Final Xemnas Cutscenes
-if Place == 0x1412 and ReadByte(Pause) == 2 then
-	WriteByte(Pause,0) --Enable Pause
-elseif Place == 0x0001 and ReadByte(Pause) == 2 then
-	WriteByte(Pause,0) --Enable Pause
-end
 end
 
 function LoD()
@@ -3875,6 +3878,8 @@ end
 Save+0x06B2 Genie Crash Fix
 [Save+0x07F0,Save+0x07FB] Mrs Potts' Minigame Location
 [Save+0x1B13,Save+0x1B15] Promise Charm Warp
+[Save+0x1B16,Save+0x1B1B] Memory Skyscraper Spawn IDs
+[Save+0x1B1C,Save+0x1B21] The Altar of Naught Spawn IDs
 Save+0x1CF1 STT Dodge Roll, STT Trinity Limit
 Save+0x1CF2 STT Fire
 Save+0x1CF3 STT Blizzard

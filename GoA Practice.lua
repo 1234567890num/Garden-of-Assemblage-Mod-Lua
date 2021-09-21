@@ -7,7 +7,7 @@ LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.9'
+local VersionNum = 'GoA Version 1.52.10'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -56,7 +56,7 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	end
 	ConsolePrint(VersionNum,0)
 	Platform = 1
-	Now = 0x0714DB8 - 0x56450E
+	Now = 0x0714DB8 - 0x56454E
 	Sve = 0x2A09C00 - 0x56450E
 	BGM = 0x0AB8504 - 0x56450E
 	Save = 0x09A7070 - 0x56450E
@@ -68,16 +68,16 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	Cntrl = 0x2A148A8 - 0x56450E
 	Timer = 0x0AB9010 - 0x56450E
 	Songs = 0x0B63534 - 0x56450E
-	GScre = 0x0728E90 - 0x56450E
-	GMdal = 0x0729024 - 0x56450E
+	GScre = 0x0728E90 - 0x56454E
+	GMdal = 0x0729024 - 0x56454E
 	GKill = 0x0AF4906 - 0x56450E
-	CamTyp = 0x0716A58 - 0x56450E
+	CamTyp = 0x0716A58 - 0x56454E
 	CutNow = 0x0B62758 - 0x56450E
 	CutLen = 0x0B62774 - 0x56450E
 	CutSkp = 0x0B6275C - 0x56450E
 	BtlTyp = 0x2A0EAC4 - 0x56450E
 	BtlEnd = 0x2A0D3A0 - 0x56450E
-	TxtBox = 0x074BC70 - 0x56450E
+	TxtBox = 0x074BC70 - 0x56454E
 	DemCln = 0x2A0CF74 - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
 	Slot1    = 0x2A20C58 - 0x56450E
