@@ -1,5 +1,5 @@
 --RAM Version
---Last Update: Post-Final Fights & Patch 1.0.0.8 Fixes
+--Last Update: Post-Final Fights (& Bugfix) & Patch 1.0.0.8 Fixes
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
@@ -1074,7 +1074,7 @@ elseif Place == 0x1412 then --Xemnas II
 	end
 	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
 	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
-elseif Place == 0x0001 then --Post Xemnas II Cutscenes
+elseif Place == 0x0001 and not Events(0x39,0x39,0x39) then --Post Xemnas II Cutscenes
 	if ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
