@@ -6,7 +6,7 @@ LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with the Randomizer.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.10'
+local VersionNum = 'GoA Version 1.52.11'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -484,6 +484,7 @@ end
 function GoA()
 --Garden of Assemblage Rearrangement
 if Place == 0x1A04 then
+	WriteInt(Save+0x3544,0x12020100) --Remove Riku
 	DriveRefill()
 	--Shop
 	WriteString(Obj0+0x13450,'SHOP_POINT\0') --Wallace -> Moogle
