@@ -539,7 +539,11 @@ if Place == 0x1A04 then
 		Spawn('Float',File,GoASpawn+0x04,0)     --Position X
 		Spawn('Float',File,GoASpawn+0x08,460)   --Position Y
 		Spawn('Float',File,GoASpawn+0x0C,-900)  --Position Z
-		Spawn('Short',File,GoASpawn+0x20,0x32)  --Save Door
+		if Evt == 0x01 then
+			Spawn('Short',File,GoASpawn+0x20,0x00)  --Save Door
+		else
+			Spawn('Short',File,GoASpawn+0x20,0x32)  --Save Door
+		end
 		Spawn('Short',File,GoASpawn+0x40,0x4A1) --Party 2 -> Moogle Shop
 		Spawn('Float',File,GoASpawn+0x44,0)     --Position X
 		Spawn('Float',File,GoASpawn+0x48,460)   --Position Y
