@@ -1,12 +1,13 @@
 --RAM Version
---Last Update: Post-Final Fights (& Bugfix) & Patch 1.0.0.8 Fixes
+--Last Update: TR spawns fix, optimized Auto-Limit removal code, Post-Final Fights spawn ID normal route fix, Atlantica progression trigger from STT, only need 1 cutscene skip after Sandswept Ruins Heartless I
+--To-do: F_HB130's AI (data door flag detection)
 
 LUAGUI_NAME = 'GoA RAM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with the Randomizer.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.11'
+local VersionNum = 'GoA Version 1.52.12'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -463,6 +464,7 @@ if Place == 0x2002 then
 		BitOr(Save+0x1DD3,0x01) --LK_START2
 		BitOr(Save+0x1DF0,0x01) --LM_START
 		BitOr(Save+0x1E10,0x02) --DC_START
+		BitOr(Save+0x1E35,0x01) --WI_START2
 		BitOr(Save+0x1E50,0x01) --NM_START
 		BitOr(Save+0x1E50,0x02) --NM_START2
 		BitOr(Save+0x1E90,0x01) --CA_START
@@ -1092,6 +1094,9 @@ if Place == 0x1A04 then
 	Spawn('Short',0x0A,0x04C,WarpRoom)
 	Spawn('Short',0x0A,0x04E,0x63)
 	Spawn('Short',0x0A,0x050,0x00)
+	if ReadInt(Save+0x357C) == 0x12120300 then --Fix party when continuing after Final Fights
+		WriteInt(Save+0x357C,0x01020300)
+	end
 end
 --World Progress
 if Place == 0x0412 and Events(Null,Null,0x02) then --The Path to the Castle
@@ -1107,20 +1112,24 @@ elseif Place == 0x1212 and Events(Null,Null,0x03) then --The Door to Kingdom Hea
 	WriteByte(Save+0x1EDE,5) --Post-Story Save
 	WriteShort(Save+0x1B24,0x03) --Memory's Skyscraper BTL
 	BitOr(Save+0x1ED6,0x80) --EH_JIMMNY_FULL_OPEN
+elseif Place == 0x1B12 then --Final Fight Part I
+	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
+	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
 elseif Place == 0x1412 then --Xemnas II
 	if ReadInt(Slot3) == 1 then --Laser Dome Skip
 		WriteInt(Slot3,0)
 	elseif ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
-	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
-	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
 elseif Place == 0x0001 and not Events(0x39,0x39,0x39) then --Post Xemnas II Cutscenes
 	if ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
-	WriteArray(Save+0x1B22,ReadArray(Save+0x1BA6,6)) --Load Memory Skyscraper Spawn ID
-	WriteArray(Save+0x1B7C,ReadArray(Save+0x1BAC,6)) --Load The Altar of Naught Spawn ID
+	if ReadShort(Save+0x1BAC) == 0x03 then --Saved Spawn ID that's altered after opening the final door (no effect on RAM)
+	else --Didn't open final door (went through Promise Charm route)
+		WriteArray(Save+0x1B22,ReadArray(Save+0x1BA6,6)) --Load Memory Skyscraper Spawn ID
+		WriteArray(Save+0x1B7C,ReadArray(Save+0x1BAC,6)) --Load The Altar of Naught Spawn ID
+	end
 	WriteInt(Save+0x000C,0x321A04) --Post-Game Save at Garden of Assemblage
 	BitNot(Save+0x1CEE,0x0C) --TT_TT21 (Computer Room Flag Fix)
 end
@@ -1222,14 +1231,8 @@ elseif Place == 0x0C08 and Events(Null,Null,0x01) then --Attack on the Camp
 	WriteByte(Save+0x1D9F,2)
 elseif Place == 0x0708 and Events(Null,Null,0x02) then --Avalanche
 	WriteByte(Save+0x1D9F,3)
-	if ReadInt(CutLen) == 0x064 then --Remove Mulan's Auto Limit
-		for Slot = 0,79 do
-			local AbilitySlot = Save + 0x2AA8 + Slot*2
-			if ReadShort(AbilitySlot) == 0x81A1 then
-				WriteShort(AbilitySlot,0x01A1)
-				break
-			end
-		end
+	Spawn('Short',0x18,0x090,0) --Unequip Mulan's Auto Limit
+	if ReadInt(CutLen) == 0x064 then --After Summit FIght
 		DriveRefill()
 	end
 elseif Place == 0x0908 and Events(0x69,0x69,0x69) then --The Hero Who Saved the Day
@@ -1418,7 +1421,6 @@ if Place == 0x1A04 then
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			WarpRoom = 0x04
-			Spawn('Short',0x0A,0x0D6,0x00)
 		elseif Progress == 1 then --[Before Halloween Town Square Heartless, Before Entering Christmas Town]
 			WarpRoom = 0x01
 		elseif Progress == 2 then --[Before Candy Cane Lane Heartless, After Candy Cane Lane Heartless]
@@ -1687,8 +1689,11 @@ if Place == 0x0A07 then
 		Spawn('Float',0x02,0x0C8,0)      --Party 2 Rotation Y
 		Spawn('Short',0x03,0x024,0x0002) --Door to Chasm of Challenges -> Peddler's Shop (Poor)
 	end
-elseif Place == 0x0E07 then --Skip Chasing Jafar's Water Clone
-	Spawn('Short',0x1C,0x238,0x00) --Instant Event Trigger
+elseif Place == 0x0E07 then
+	if ReadShort(Save+0x0AE8) == 0x0D then --Skip Chasing Jafar's Water Clone
+		WriteShort(Save+0x0AE6,0x00) --Sandswept Ruins BTL
+		WriteShort(Save+0x0AE8,0x0E) --Sandswept Ruins EVT
+	end
 	Spawn('Int',0x20,0x078,0x4615AB30) --Position X
 	Spawn('Int',0x20,0x07C,0xC509085E) --Position Y
 	Spawn('Int',0x20,0x080,0xC6605C52) --Position Z
@@ -2783,7 +2788,13 @@ elseif Place == 0x000D and Events(Null,Null,0x07) then --Back to Their Own World
 elseif Place == 0x050C and Events(Null,Null,0x01) then --The Castle is Secure
 	BitOr(Save+0x1D26,0x80) --HB_FM_MAR_RE_CLEAR (Change Portal Color)
 	WriteByte(Save+0x1E1E,3) --Post-Story Save
-	WriteByte(Save+0x1232,0x15) --Hall of the Cornerstone (Light) EVT
+	WriteShort(Save+0x1232,0x15) --Hall of the Cornerstone (Light) EVT
+	WriteShort(Save+0x1398,0x0A) --Pier BTL
+	WriteShort(Save+0x13A4,0x0A) --Wharf BTL
+	WriteShort(Save+0x13AA,0x0A) --Lilliput BTL
+	WriteShort(Save+0x13B0,0x0A) --Building Site BTL
+	WriteShort(Save+0x13B6,0x0A) --Scene of the Fire BTL
+	WriteShort(Save+0x13BC,0x0A) --Mickey's House BTL
 elseif Place == 0x2604 and Events(0x7F,0x7F,0x7F) then --Marluxia Defeated
 	WriteByte(Save+0x1E1F,4)
 elseif ReadByte(Save+0x36B2) > 0 and ReadByte(Save+0x1E1E) > 0 and ReadShort(Save+0x122E) == 0x00 then --Proof of Connection, DC Cleared, Terra Locked
@@ -2962,15 +2973,7 @@ elseif Place == 0x0211 and Events(Null,Null,0x01) then --The Game Grid (Skip Lig
 	WriteShort(Save+0x1994,0x07) --Pit Cell EVT
 elseif Place == 0x0311 and Events(0x4E,0x4E,0x4E) then --Buying Time
 	WriteByte(Save+0x1EBF,2)
-	if ReadInt(CutLen) == 0x064 then --Unequip Tron's Auto Limit
-		for Slot = 0,79 do
-			local AbilitySlot = Save + 0x3120 + Slot*2
-			if ReadShort(AbilitySlot) == 0x81A1 then
-				WriteShort(AbilitySlot,0x01A1)
-				break
-			end
-		end
-	end
+	Spawn('Short',0x18,0x090,0x00) --Unequip Tron's Auto Limit
 elseif Place == 0x0511 and Events(Null,Null,0x01) then --Before Communications Room Cutscene
 	Spawn('Short',0x05,0x034,0x000) --Monitor -> Nothing
 elseif Place == 0x0511 and Events(0x02,0x00,0x16) then --After Communications Room Cutscene
@@ -3667,6 +3670,19 @@ end
 --Atlantica Visited
 if Place == 0x020B and Events(Null,Null,0x01) then --The Kingdom Under the Sea
 	WriteByte(Save+0x1DFF,1)
+end
+--Atlantica STT Unlock (since Magic is stored somewhere else)
+if ReadByte(Save+0x1CFF) == 13 then
+	if ReadShort(Save+0x10A0) == 0x16 and ReadByte(Save+0x1CF6) >= 1 then --Unlock 2nd Song
+		WriteShort(Save+0x1094,0x11) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x16) --Undersea Courtyard EVT
+	elseif ReadShort(Save+0x10A0) == 0x07 and ReadByte(Save+0x1CF6) >= 2 then --Unlock 4th Song
+		WriteShort(Save+0x1094,0x0F) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x14) --Undersea Courtyard EVT
+	elseif ReadShort(Save+0x10A0) == 0x0C and ReadByte(Save+0x1CF4) >= 3 then --Unlock 5th Song
+		WriteShort(Save+0x1094,0x0D) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x13) --Undersea Courtyard EVT
+	end
 end
 --End of Visits -> Garden of Assemblage
 if Place == 0x050B then --1st Visit

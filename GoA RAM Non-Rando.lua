@@ -1,12 +1,12 @@
 --RAM Version
---Last Update: Post-Final Fights (& Bugfix) & Patch 1.0.0.8 Fixes
+--Last Update: Removed Promise Charm path codes & added fixes from Rando build
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with vanilla items.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.11'
+local VersionNum = 'GoA Version 1.52.12'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -461,6 +461,7 @@ if Place == 0x2002 then
 		BitOr(Save+0x1DD3,0x01) --LK_START2
 		BitOr(Save+0x1DF0,0x01) --LM_START
 		BitOr(Save+0x1E10,0x02) --DC_START
+		BitOr(Save+0x1E35,0x01) --WI_START2
 		BitOr(Save+0x1E50,0x01) --NM_START
 		BitOr(Save+0x1E50,0x02) --NM_START2
 		BitOr(Save+0x1E90,0x01) --CA_START
@@ -1056,6 +1057,9 @@ if Place == 0x1A04 then
 	Spawn('Short',0x0A,0x04C,WarpRoom)
 	Spawn('Short',0x0A,0x04E,0x63)
 	Spawn('Short',0x0A,0x050,0x00)
+	if ReadInt(Save+0x357C) == 0x12120300 then --Fix party when continuing after Final Fights
+		WriteInt(Save+0x357C,0x01020300)
+	end
 end
 --World Progress
 if Place == 0x0412 and Events(Null,Null,0x02) then --The Path to the Castle
@@ -1077,14 +1081,10 @@ elseif Place == 0x1412 then --Xemnas II
 	elseif ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
-	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
-	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
 elseif Place == 0x0001 and not Events(0x39,0x39,0x39) then --Post Xemnas II Cutscenes
 	if ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
-	WriteArray(Save+0x1B22,ReadArray(Save+0x1BA6,6)) --Load Memory Skyscraper Spawn ID
-	WriteArray(Save+0x1B7C,ReadArray(Save+0x1BAC,6)) --Load The Altar of Naught Spawn ID
 	WriteInt(Save+0x000C,0x321A04) --Post-Game Save at Garden of Assemblage
 	BitNot(Save+0x1CEE,0x0C) --TT_TT21 (Computer Room Flag Fix)
 end
@@ -1196,14 +1196,8 @@ elseif Place == 0x0C08 and Events(Null,Null,0x01) then --Attack on the Camp
 	WriteByte(Save+0x1D9F,2)
 elseif Place == 0x0708 and Events(Null,Null,0x02) then --Avalanche
 	WriteByte(Save+0x1D9F,3)
-	if ReadInt(CutLen) == 0x064 then --Remove Mulan's Auto Limit
-		for Slot = 0,79 do
-			local AbilitySlot = Save + 0x2AA8 + Slot*2
-			if ReadShort(AbilitySlot) == 0x81A1 then
-				WriteShort(AbilitySlot,0x01A1)
-				break
-			end
-		end
+	Spawn('Short',0x18,0x090,0) --Unequip Mulan's Auto Limit
+	if ReadInt(CutLen) == 0x064 then --After Summit FIght
 		DriveRefill()
 	end
 elseif Place == 0x0908 and Events(0x69,0x69,0x69) then --The Hero Who Saved the Day
@@ -1392,7 +1386,6 @@ if Place == 0x1A04 then
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			WarpRoom = 0x04
-			Spawn('Short',0x0A,0x0D6,0x00)
 		elseif Progress == 1 then --[Before Halloween Town Square Heartless, Before Entering Christmas Town]
 			WarpRoom = 0x01
 		elseif Progress == 2 then --[Before Candy Cane Lane Heartless, After Candy Cane Lane Heartless]
@@ -1661,8 +1654,11 @@ if Place == 0x0A07 then
 		Spawn('Float',0x02,0x0C8,0)      --Party 2 Rotation Y
 		Spawn('Short',0x03,0x024,0x0002) --Door to Chasm of Challenges -> Peddler's Shop (Poor)
 	end
-elseif Place == 0x0E07 then --Skip Chasing Jafar's Water Clone
-	Spawn('Short',0x1C,0x238,0x00) --Instant Event Trigger
+elseif Place == 0x0E07 then
+	if ReadShort(Save+0x0AE8) == 0x0D then --Skip Chasing Jafar's Water Clone
+		WriteShort(Save+0x0AE6,0x00) --Sandswept Ruins BTL
+		WriteShort(Save+0x0AE8,0x0E) --Sandswept Ruins EVT
+	end
 	Spawn('Int',0x20,0x078,0x4615AB30) --Position X
 	Spawn('Int',0x20,0x07C,0xC509085E) --Position Y
 	Spawn('Int',0x20,0x080,0xC6605C52) --Position Z
@@ -2739,7 +2735,13 @@ elseif Place == 0x000D and Events(Null,Null,0x07) then --Back to Their Own World
 elseif Place == 0x050C and Events(Null,Null,0x01) then --The Castle is Secure
 	BitOr(Save+0x1D26,0x80) --HB_FM_MAR_RE_CLEAR (Change Portal Color)
 	WriteByte(Save+0x1E1E,3) --Post-Story Save
-	WriteByte(Save+0x1232,0x15) --Hall of the Cornerstone (Light) EVT
+	WriteShort(Save+0x1232,0x15) --Hall of the Cornerstone (Light) EVT
+	WriteShort(Save+0x1398,0x0A) --Pier BTL
+	WriteShort(Save+0x13A4,0x0A) --Wharf BTL
+	WriteShort(Save+0x13AA,0x0A) --Lilliput BTL
+	WriteShort(Save+0x13B0,0x0A) --Building Site BTL
+	WriteShort(Save+0x13B6,0x0A) --Scene of the Fire BTL
+	WriteShort(Save+0x13BC,0x0A) --Mickey's House BTL
 elseif Place == 0x2604 and Events(0x7F,0x7F,0x7F) then --Marluxia Defeated
 	WriteByte(Save+0x1E1F,4)
 elseif ReadByte(Save+0x3694) > 0 and ReadByte(Save+0x1E1E) > 0 and ReadShort(Save+0x122E) == 0x00 then --Promise Charm, DC Cleared, Terra Locked
@@ -2918,15 +2920,7 @@ elseif Place == 0x0211 and Events(Null,Null,0x01) then --The Game Grid (Skip Lig
 	WriteShort(Save+0x1994,0x07) --Pit Cell EVT
 elseif Place == 0x0311 and Events(0x4E,0x4E,0x4E) then --Buying Time
 	WriteByte(Save+0x1EBF,2)
-	if ReadInt(CutLen) == 0x064 then --Unequip Tron's Auto Limit
-		for Slot = 0,79 do
-			local AbilitySlot = Save + 0x3120 + Slot*2
-			if ReadShort(AbilitySlot) == 0x81A1 then
-				WriteShort(AbilitySlot,0x01A1)
-				break
-			end
-		end
-	end
+	Spawn('Short',0x18,0x090,0x00) --Unequip Tron's Auto Limit
 elseif Place == 0x0511 and Events(Null,Null,0x01) then --Before Communications Room Cutscene
 	Spawn('Short',0x05,0x034,0x000) --Monitor -> Nothing
 elseif Place == 0x0511 and Events(0x02,0x00,0x16) then --After Communications Room Cutscene
@@ -3624,6 +3618,19 @@ end
 if Place == 0x020B and Events(Null,Null,0x01) then --The Kingdom Under the Sea
 	WriteByte(Save+0x1DFF,1)
 end
+--Atlantica STT Unlock (since Magic is stored somewhere else)
+if ReadByte(Save+0x1CFF) == 13 then
+	if ReadShort(Save+0x10A0) == 0x16 and ReadByte(Save+0x1CF6) >= 1 then --Unlock 2nd Song
+		WriteShort(Save+0x1094,0x11) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x16) --Undersea Courtyard EVT
+	elseif ReadShort(Save+0x10A0) == 0x07 and ReadByte(Save+0x1CF6) >= 2 then --Unlock 4th Song
+		WriteShort(Save+0x1094,0x0F) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x14) --Undersea Courtyard EVT
+	elseif ReadShort(Save+0x10A0) == 0x0C and ReadByte(Save+0x1CF4) >= 3 then --Unlock 5th Song
+		WriteShort(Save+0x1094,0x0D) --Triton's Grotto EVT
+		WriteShort(Save+0x10A0,0x13) --Undersea Courtyard EVT
+	end
+end
 --End of Visits -> Garden of Assemblage
 if Place == 0x050B then --1st Visit
 	Spawn('Short',0x03,0x058,0x01)
@@ -3688,9 +3695,6 @@ elseif Place == 0x0A10 and ReadByte(Save+0x1E9E) > 0 then --Isla de Muerta: Trea
 	WriteByte(Save+0x1CFC,10)
 elseif Place == 0x2102 and PrevPlace == 0x1602 then --STT Pod Room
 	WriteByte(Save+0x1CFC,13)
-elseif World == 0x12 and PrevPlace == 0x1A04 and (ReadByte(CamTyp) == 8 or ReadShort(TxtBox) == 0x772) then --GoA Computer with Promise Charm
-	Warp(0x02,0x21,0x00,0x00,0x01,0x00)
-	WriteByte(Save+0x1CFC,15)
 end
 --Spawn Enemies & Twilight Thorn Event
 if ReadShort(Save+0x03D8) == 0x00 then
@@ -3719,8 +3723,6 @@ if Place == 0x2102 then
 	elseif ReadByte(Save+0x1CFC) == 13 then
 		Nobody = 0x136 --Samurai
 		Spawn('Short',0x03,0x024,0x0116) --Door to Station of Serenity -> Basement Corridor
-	elseif ReadByte(Save+0x1CFC) == 15 then
-		Nobody = 0x04B --Bulky Vendor
 	end
 	if Nobody then
 		WriteByte(Save+0x3FF5,13) --Battle Level
@@ -3734,15 +3736,6 @@ if Place == 0x2102 then
 		Spawn('Short',0x07,0x464,Nobody)
 		Spawn('Short',0x07,0x4A4,Nobody)
 		Spawn('Short',0x07,0x4E4,Nobody)
-	end
-	--Treasure Chest
-	if ReadByte(Save+0x1CFC) == 15 then --Promise Charm Path
-		Spawn('Short',0x05,0x034,0x23A) --Chest -> Save Point
-		Spawn('Float',0x05,0x038,32)    --Position X
-		Spawn('Float',0x05,0x03C,32)    --Position Y
-		Spawn('Float',0x05,0x040,1877)  --Position Z
-	elseif ReadByte(Save+0x1CFF) ~= 13 then --Outside STT
-		Spawn('Short',0x05,0x034,0x000) --Chest -> Nothing
 	end
 	--Prevent Disappearing Summon Softlock
 	if PrevPlace ~= 0x2002 then
@@ -3782,17 +3775,6 @@ if Place == 0x2202 then
 	elseif ReadByte(Save+0x1CFC) == 13 then
 		WarpWorld = 0x12
 		WarpEvt   = 0x71
-	elseif ReadByte(Save+0x1CFC) == 15 then
-		WriteByte(CutSkp,1)
-		Spawn('Short',0x05,0x030,0x01) --Start of TWtNW
-		Spawn('Short',0x05,0x032,0x12)
-		Spawn('Short',0x05,0x034,0x01)
-		Spawn('Short',0x05,0x038,0x00)
-		if ReadByte(Save+0x1B13) == 0 then
-			WriteShort(Save+0x1B14,ReadShort(Save+0x1B1A)) --Save Alley to Between EVT
-			WriteShort(Save+0x1B1A,0x01) --Alley to Between EVT
-			WriteByte(Save+0x1B13,1)
-		end
 	end
 	if WarpWorld and WarpEvt then
 		WriteByte(Save+0x1CFF,0) --Reset TT & STT Flag
@@ -3818,8 +3800,6 @@ if Place == 0x2002 then
 		Warp(0x04,0x12,0x02,0x01,0x0B,0x00)
 	elseif ReadByte(Save+0x1CFC) == 10 then
 		Warp(0x10,0x0D,0x01,0x00,0x0A,0x00)
-	elseif ReadByte(Save+0x1CFC) == 15 then
-		Warp(0x04,0x1A,0x32,0x00,0x00,0x02)
 	end
 	WriteByte(Save+0x1CFC,0) --Reset Data Path Flag
 elseif Place == 0x1302 and ReadByte(Save+0x1CFF) == 8 then
@@ -3828,50 +3808,6 @@ elseif Place == 0x1302 and ReadByte(Save+0x1CFF) == 8 then
 elseif Place == 0x1602 and ReadByte(Save+0x1CFF) == 13 then
 	WriteByte(Save+0x1CFC,0) --Reset Data Path Flag
 	WriteByte(Save+0x3FF5,6) --Battle Level
-end
---Promise Charm Warp
-if ReadByte(Save+0x1CFC) == 15 then
-	if Place == 0x0112 then
-		WriteInt(CutLen,2)
-		Spawn('Short',0x08,0x0B2,0x03) --Full Party
-		Spawn('Short',0x08,0x0C4,0x02) --Warp to Final Fights
-		Spawn('Short',0x08,0x0CC,0x5E)
-		if ReadInt(CutNow) == 2 then
-			WriteShort(Now,0x1B12) --Show World of Nothing in Menu
-		end
-	elseif Place == 0x1B12 then --Part I
-		WriteShort(Save+0x1B1A,ReadShort(Save+0x1B14)) --Load Alley to Between EVT
-		WriteByte(Save+0x1B13,0) --Reset Flag
-		if ReadShort(Save+0x1B1A) == 0x01 then --Haven't visited TWtNW
-			BitNot(Save+0x1ED0,0x20) --EH_eh_event_101
-		end
-	elseif Place == 0x1712 then --Armor Xemnas II
-		WriteByte(Save+0x1CFC,0)
-	end
-	--Music Change - Final Fights
-	if Platform == 0 then
-		if Place == 0x1B12 then --Part I
-			Spawn('Short',0x06,0x0A4,0x09C) --Guardando nel buio
-			Spawn('Short',0x06,0x0A6,0x09C)
-		elseif Place == 0x1C12 then --Part II
-			Spawn('Short',0x07,0x008,0x09C)
-			Spawn('Short',0x07,0x00A,0x09C)
-		elseif Place == 0x1A12 then --Cylinders
-			Spawn('Short',0x07,0x008,0x09C)
-			Spawn('Short',0x07,0x00A,0x09C)
-		elseif Place == 0x1912 then --Core
-			Spawn('Short',0x07,0x008,0x09C)
-			Spawn('Short',0x07,0x00A,0x09C)
-		elseif Place == 0x1812 then --Armor Xemnas I
-			Spawn('Short',0x06,0x008,0x09C)
-			Spawn('Short',0x06,0x00A,0x09C)
-			Spawn('Short',0x06,0x034,0x09C)
-			Spawn('Short',0x06,0x036,0x09C)
-		elseif Place == 0x1D12 then --Pre-Dragon Xemnas
-			Spawn('Short',0x03,0x010,0x09C)
-			Spawn('Short',0x03,0x012,0x09C)
-		end
-	end
 end
 end
 
@@ -3882,9 +3818,6 @@ end
 [Save+0x066A,Save+0x066F] Borough Spawn IDs
 Save+0x06B2 Genie Crash Fix
 [Save+0x07F0,Save+0x07FB] Mrs Potts' Minigame Location
-[Save+0x1B13,Save+0x1B15] Promise Charm Warp
-[Save+0x1B16,Save+0x1B1B] Memory Skyscraper Spawn IDs
-[Save+0x1B1C,Save+0x1B21] The Altar of Naught Spawn IDs
 Save+0x1CF1 STT Dodge Roll, STT Trinity Limit
 Save+0x1CF2 STT Fire
 Save+0x1CF3 STT Blizzard

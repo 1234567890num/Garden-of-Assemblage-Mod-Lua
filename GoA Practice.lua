@@ -7,7 +7,7 @@ LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.11'
+local VersionNum = 'GoA Version 1.52.12'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
