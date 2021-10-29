@@ -1,6 +1,6 @@
 --RAM Version
---Last Update: TR spawns fix, optimized Auto-Limit removal code, Post-Final Fights spawn ID normal route fix, Atlantica progression trigger from STT, only need 1 cutscene skip after Sandswept Ruins Heartless I
---To-do: F_HB130's AI (data door flag detection)
+--Last Update: Barrier -> Barrier -> Block renaming, Ansem's Study puzzle early unlock, BC spawn bugfix, OC minor bugfix, TT/STT BGM code optimisation
+--To-do: F_HB130's AI (data door flag detection), fix Spooky Cave minigame retry barrier
 
 LUAGUI_NAME = 'GoA RAM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
@@ -222,7 +222,7 @@ elseif Platform == 1 then
 end
 end
 
-function RemoveTTBarriers() --Remove All TT & STT Barriers
+function RemoveTTBlocks() --Remove All TT & STT Blocks
 WriteShort(Save+0x207C,0x0000) --Sunset Station
 WriteShort(Save+0x2080,0x0000) --Central Station
 WriteShort(Save+0x20E4,0x0000) --Underground Concourse
@@ -1290,7 +1290,6 @@ if Place == 0x1A04 then
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			WarpRoom = 0x00
-			Spawn('Short',0x0A,0x0B6,0x00)
 		elseif Progress == 1 then --[After Parlor Heartless, Before Meeting Belle]
 			WarpRoom = 0x01
 		elseif Progress == 2 then --After Meeting Belle
@@ -1350,9 +1349,9 @@ elseif ReadByte(Save+0x1D3F) == 7 and ReadByte(Save+0x35B3) > 0 then --2nd Visit
 	WriteShort(Save+0x07CE,0x00) --Dungeon BTL
 elseif Place == 0x0205 and Events(Null,Null,0x0A) then --Dressing Up
 	WriteByte(Save+0x1D3F,9)
-elseif Place == 0x0405 and Events(Null,Null,0x0A) then --Uninvited Guests
+elseif Place == 0x0305 and Events(Null,Null,0x0A) then --The Missing Rose
 	WriteByte(Save+0x1D3F,10)
-elseif Place == 0x0305 and Events(Null,Null,0x0B) then --Don't Give Up
+elseif Place == 0x0305 and Events(Null,Null,0x14) then --Don't Give Up
 	WriteByte(Save+0x1D3F,11)
 elseif Place == 0x0D05 and Events(Null,Null,0x0A) then --The Whirlwind Lancer: Xaldin
 	BitNot(Save+0x1D35,0x01) --BB_216_END (Change Spawn ID in Next Cutscene Properly)
@@ -1780,7 +1779,7 @@ elseif Place == 0x0306 and Events(Null,Null,0x05) then --Arriving in the Underwo
 	WriteByte(Save+0x1D6F,5)
 elseif Place == 0x1106 and Events(0x7B,0x7B,0x7B) then --Regained Power
 	WriteByte(Save+0x1D6F,6)
-elseif Place == 0x0806 and Events(Null,Null,0x01) then --Presistent Ol' Pete
+elseif Place == 0x0806 and Events(Null,Null,0x01) then --Persistent Ol' Pete
 	WriteByte(Save+0x1D6F,7)
 elseif Place == 0x1206 and Events(0xAB,0xAB,0xAB) then --The Aftermath
 	WriteByte(Save+0x1D6F,8)
@@ -1788,6 +1787,7 @@ elseif Place == 0x1206 and Events(0xAB,0xAB,0xAB) then --The Aftermath
 elseif ReadByte(Save+0x1D6F) == 8 and ReadByte(Save+0x35AE) > 0 then --2nd Visit
 	WriteByte(Save+0x1D6F,9)
 	WriteShort(Save+0x0920,0x12) --Coliseum Gates (Destroyed) EVT
+	WriteShort(Save+0x0938,0x13) --Hades' Chamber EVT
 	if ReadShort(Save+0x0926) == 0x0A then
 		WriteShort(Save+0x0926,0x0B) --Underworld Entrance EVT
 	else
@@ -1871,14 +1871,25 @@ if Place == 0x0306 and ReadShort(Save+0x239C)&0x07BA == 0 then
 end
 --Unlock All Paradox Cup after Goddess of Fate Cup
 if Place == 0x0D06 and Events(0xB7,0xB7,0xB7) then
-	WriteShort(Save+0x239C,ReadShort(Save+0x239C)|0x07BA)
+	BitOr(Save+0x239C,0x20) --Pain & Panic Paradox
+	BitOr(Save+0x239D,0x04) --Cerberus Paradox
+	BitOr(Save+0x239C,0x80) --Titan Paradox
+	BitOr(Save+0x239D,0x01) --Hades Paradox
 end
 --Unlock All Cups with Hades Cups Trophy
 if ReadByte(Save+0x3696) > 0 then
-	WriteShort(Save+0x239C,ReadShort(Save+0x239C)|0x07BA)
+	BitOr(Save+0x239C,0x02) --Pain & Panic
+	BitOr(Save+0x239D,0x02) --Cerberus
+	BitOr(Save+0x239C,0x08) --Titan
+	BitOr(Save+0x239C,0x10) --Goddess of Fate
+	BitOr(Save+0x239C,0x20) --Pain & Panic Paradox
+	BitOr(Save+0x239D,0x04) --Cerberus Paradox
+	BitOr(Save+0x239C,0x80) --Titan Paradox
+	BitOr(Save+0x239D,0x01) --Hades Paradox
 	if ReadByte(Save+0x1D6E) > 0 then --Make Hades Appear in His Chamber after 2nd Visit
 		WriteShort(Save+0x0936,0x15) --Hades' Chamber BTL
 		WriteShort(Save+0x0938,0x14) --Hades' Chamber EVT
+		BitOr(Save+0x1D5E,0x04) --HE_HADES_ON
 	end
 end
 --Zexion's Absent Silhouette Removal
@@ -2217,61 +2228,62 @@ if ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) 
 	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
 	local PostSave = ReadByte(Save+0x1CFD)
 	local Progress = ReadByte(Save+0x1D0D)
-	local Visit --Battle Level & Barriers
-	RemoveTTBarriers()
+	local Visit --Battle Level & Blocks
+	RemoveTTBlocks()
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			Visit = 7
 		elseif Progress == 1 then --Before Station Plaza Nobodies
 			Visit = 7
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 2 then --After Station Plaza Nobodies
 			Visit = 7
-			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Barrier
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x20F4,0xCC6A) --The Tower Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Block
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x20F4,0xCC6A) --The Tower Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 3 then --[After The Tower Heartless, After Moon Chamber Heartless]
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
 		elseif Progress == 4 then --Before Talking to Yen Sid
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
-			WriteShort(Save+0x20F8,0x9F4E) --Tower: Wardrobe Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
+			WriteShort(Save+0x20F8,0x9F4E) --Tower: Wardrobe Block
 		elseif Progress == 5 then --After Talking to Yen Sid
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
 		elseif Progress == 6 then --Post 1st Visit
 			Visit = 8
-			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Barrier
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Block
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 7 then --2nd Visit
 			Visit = 9
 		elseif Progress == 8 then --Before Sandlot Nobodies II
 			Visit = 9
-			WriteShort(Save+0x2080,0xC663) --Central Station Barrier
-			WriteShort(Save+0x20E4,0xC66D) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC665) --Mansion Foyer Barrier
+			WriteShort(Save+0x2080,0xC663) --Central Station Block
+			WriteShort(Save+0x20E4,0xC66D) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC665) --Mansion Foyer Block
 		elseif Progress == 9 then --After Sandlot Nobodies II
 			Visit = 9
-			WriteShort(Save+0x20E4,0xC66F) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC667) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xC66F) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC667) --Mansion Foyer Block
 		elseif Progress == 10 then --Post 2nd Visit
 			Visit = 9
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 11 then --3rd Visit
 			Visit = 10
 		elseif Progress == 12 or Progress == 13 or Progress == 14 then --[Before The Old Mansion Nobodies, Before Betwixt and Between Nobodies]
 			Visit = 10
-			WriteShort(Save+0x20EC,0xCB76) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xCB76) --Sandlot Block
 		end
 	else
 		Visit = 10
 	end
 	WriteByte(Save+0x3FF5,Visit)
+	WriteByte(Save+0x23EE,1) --TT Music: The Afternoon Streets & Working Together
 	--Load the Proper Spawn ID
 	local SpawnOffset = 0x310 + Room*6
 	if Evt < 0x20 then --Not a Special Event
@@ -2301,7 +2313,7 @@ if ReadByte(Save+0x1CFF) == 8 and false then
 end
 --Station Plaza Nobodies with Trinity Limit End Softlock Fix
 if Place == 0x0802 and Events(0x6C,0x6C,0x6C) and ReadInt(Point1) == 98 then --Hit Counter Almost Reached
-	WriteInt(CutLen,0x001) --End Trinity Limit Early
+	WriteInt(CutLen,1) --End Trinity Limit Early
 end
 --Lexaeus Absent Silhouette Removal
 if ReadShort(Save+0x032A) == 0x02 then
@@ -2393,7 +2405,7 @@ elseif Place == 0x0D04 and Events(Null,Null,0x08) then --
 	WriteByte(Save+0x1D2F,2)
 elseif ReadByte(Save+0x1D2F) == 2 and ReadByte(Save+0x35C1) > 0 then --4th Visit
 	WriteByte(Save+0x1D2F,3)
-	WriteShort(Save+0x064C,0x02) --Marketplace MAP (Barrier Beyond Cloud)
+	WriteShort(Save+0x064C,0x02) --Marketplace MAP (Despawn Room Transition)
 	WriteShort(Save+0x0650,0x02) --Marketplace EVT
 elseif Place == 0x0D04 and Events(Null,Null,0x02) then --Cid's Report
 	WriteByte(Save+0x1D2F,4)
@@ -2421,7 +2433,7 @@ elseif Place == 0x0504 and Events(Null,Null,0x0D) then --Wait for Us, Tron
 	WriteShort(Save+0x0662,0x0C) --Merlin's House EVT
 elseif Place == 0x0604 and Events(0x5E,0x5E,0x5E) then --Radiant Garden
 	BitOr(Save+0x1D26,0x20) --HB_FM_DEM_RE_CLEAR (Change Portal Color)
-	WriteShort(Save+0x1D2E,2) --Post-Story Save
+	WriteByte(Save+0x1D2E,2) --Post-Story Save
 	WriteShort(Save+0x067C,0x01) --Restoration Site (Destroyed) MAP (Door to GoA Revealed)
 elseif Place == 0x1904 and Events(Null,0x05,0x04) then --Transport to Remembrance Cleared
 	WriteShort(Save+0x06A8,0x04) --Transport to Remembrance BTL
@@ -2523,20 +2535,26 @@ if ReadShort(Save+0x065E) == 0x00 or ReadShort(Save+0x065E) == 0x04 then
 	WriteShort(Save+0x065E,0x01) --Merlin's House MAP
 end
 --Ansem's Study Rearrangement
-if Place == 0x0504 then --Remove Space Paranoids Computer
-	Spawn('Short',0x07,0x034,0x000)
+if Place == 0x0504 then
 	if ReadByte(Save+0x3643) > 0 then --Heartless Manufactory Early Access (Membership Card)
-		WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Barrier Removal
+		WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Unblock
 		Spawn('Int',0x01,0x5B0,0xC1C8F) --MAP 0x0D
 		Spawn('String',0x01,0x5FC,'m_11')
 		Spawn('Int',0x01,0x950,0xC1C8F) --MAP 0x0F
 		Spawn('String',0x01,0x9A4,'m_11')
 		Spawn('Int',0x01,0x10E0,0xC1C8F) --MAP 0x08
 		Spawn('String',0x01,0x112C,'m_11')
+		Spawn('Short',0x07,0x034,0x988) --Space Paranoids Computer -> Puzzle Piece
+		Spawn('Float',0x07,0x038,-2400) --Position X
+		Spawn('Float',0x07,0x03C,-50)   --Position Y
+		Spawn('Float',0x07,0x040,-1100) --Position Z
+		Spawn('Short',0x07,0x054,1)     --Piece ID
+	else
+		Spawn('Short',0x07,0x034,0x000) --Space Paranoids Computer -> Nothing
 	end
 end
 --After-Demyx Checkpoint
-if ReadByte(Save+0x1D2F) == 8 then
+if ReadByte(Save+0x1D2F) == 8 and World == 0x04 then
 	if Place == 0x0404 then --Before FF Fights
 		WriteShort(Save+0x0670,0x3E) --Ravine Trail MAP (FF Fights I)
 		WriteShort(Save+0x0672,0x3E) --Ravine Trail BTL
@@ -2547,16 +2565,14 @@ if ReadByte(Save+0x1D2F) == 8 then
 		WriteShort(Sys3+0x0CD10,0x91) --Castle Gate Music: Vim & Vigor (Field)
 		WriteShort(Sys3+0x0CD12,0x91) --Castle Gate Music: Vim & Vigor (Fight)
 	end
-	if Place == 0x1A04 then
-		WriteInt(Save+0x3544,0x12020100) --Add Goofy
-	elseif Place ~= 0x0404 and Place ~= 0x2004 and Place ~= 0x2104 and Place ~= 0x2204 and Place ~= 0x2604 then --Not in HB Org Arenas
+	if not(Place == 0x0404 or Place == 0x1A04 or Place == 0x2004 or Place == 0x2104 or Place == 0x2204 or Place == 0x2604) then --Not in HB Org Arenas or GoA
 		WriteInt(Save+0x3544,0x12120100) --Remove Goofy
 	end
 end
 --Skip Hollow Bastion 5th Visit
 if ReadShort(Save+0x0650) == 0x0A then
 	BitOr(Save+0x1D26,0x20) --HB_FM_DEM_RE_CLEAR (Change Portal Color)
-	WriteShort(Save+0x1D2E,2) --Post-Story Save
+	WriteByte(Save+0x1D2E,2) --Post-Story Save
 	WriteShort(Save+0x0618,0x00) --The Dark Depths BTL
 	WriteShort(Save+0x061A,0x16) --The Dark Depths EVT
 	WriteShort(Save+0x061E,0x02) --The Great Maw BTL
@@ -2572,7 +2588,7 @@ if ReadShort(Save+0x0650) == 0x0A then
 	WriteShort(Save+0x067C,0x01) --Restoration Site (Destroyed) MAP (Door to GoA Revealed)
 	WriteShort(Save+0x067E,0x0B) --Restoration Site (Destroyed) BTL
 	WriteShort(Save+0x0684,0x0B) --Bailey (Destroyed) BTL
-	WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Barrier Removal
+	WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Unblock
 	BitOr(Save+0x1D19,0x10) --HB_508_END
 	BitOr(Save+0x1D1C,0x10) --HB_509_END
 	BitOr(Save+0x1D1C,0x20) --HB_hb09_ms501
@@ -3020,15 +3036,15 @@ if ReadShort(Save+0x1994) == 0x04 then --Skip Light Cycle
 	WriteShort(Save+0x1998,0x01) --Canyon BTL
 	WriteShort(Save+0x19A2,0x02) --Dataspace MAP (Access Computer RC)
 	WriteShort(Save+0x19A6,0x01) --Dataspace EVT
-	WriteShort(Save+0x2128,0x0000) --Dataspace Barrier Removal
+	WriteShort(Save+0x2128,0x0000) --Dataspace Unblock
 	BitOr(Save+0x1EB0,0x80) --TR_107_END
 	BitOr(Save+0x1D12,0x08) --HB_tr_107_END
 	BitOr(Save+0x1D12,0x10) --HB_301_END
 	BitOr(Save+0x1D12,0x20) --HB_302_END
 	BitOr(Save+0x1D12,0x80) --HB_304_END
 	BitOr(Save+0x1EB4,0x10) --TR_hb_304_END
-	BitOr(Save+0x1EB1,0x02) --TR_tr04_ms104
-	BitOr(Save+0x1EB1,0x04) --TR_116_END
+	BitOr(Save+0x1EB1,0x02) --TR_108_END
+	BitOr(Save+0x1EB1,0x04) --TR_109_END
 	BitOr(Save+0x1EB5,0x08) --TR_tr02_ms102a
 	BitOr(Save+0x1EB5,0x10) --TR_tr02_ms102b
 	BitOr(Save+0x1EB1,0x10) --TR_110_END
@@ -3188,8 +3204,10 @@ elseif Place == 0x0602 and Events(Null,Null,0x01) then --It's a Promise
 	WriteByte(Save+0x1D0E,2)
 elseif Place == 0x0602 and ReadShort(Save+0x0338) == 0x0C and (Events(0x59,0x59,0x59) or Events(0x5A,0x5A,0x5A) or Events(0x5B,0x5B,0x5B)) then --End Day 2 Early 1
 	WriteShort(Save+0x0338,0x0D) --Station Heights EVT
+	BitOr(Save+0x1CEB,0x80) --TT_206_END_work03
 elseif Place == 0x0702 and ReadShort(Save+0x033E) == 0x0C and (Events(0x64,0x64,0x64) or Events(0x65,0x65,0x65) or Events(0x66,0x66,0x66)) then --End Day 2 Early 2
 	WriteShort(Save+0x033E,0x0D) --Tram Common EVT
+	BitOr(Save+0x1CEB,0x80) --TT_206_END_work03
 elseif ReadShort(Save+0x0320) == 0x16 then --Keep Munny after Day 2
 	WriteShort(Save+0x0320,0x00) --The Usual Spot EVT
 elseif Place == 0x0102 and Events(0x3A,0x3A,0x3A) then --Awakened by an Illusion
@@ -3219,8 +3237,8 @@ elseif Place == 0x1302 and Events(0x88,0x88,0x88) then --In the Next Life
 	WriteShort(Save+0x0366,0x01) --The Old Mansion BTL
 	WriteShort(Save+0x036C,0x01) --Mansion Foyer BTL
 	WriteShort(Save+0x0372,0x01) --Dining Room BTL
-	WriteShort(Save+0x2114,0x0000) --Station Plaza Barrier Removal
-	WriteShort(Save+0x211C,0x0000) --The Old Mansion Barrier Removal
+	WriteShort(Save+0x2114,0x0000) --Station Plaza Unblock
+	WriteShort(Save+0x211C,0x0000) --The Old Mansion Unblock
 	DriveRefill()
 elseif Place == 0x1702 and Events(Null,Null,0x01) then --My Summer Vacation Is Over
 	BitOr(Save+0x1ED9,0x40) --EH_FM_ROX_RE_CLEAR (Change Portal Color)
@@ -3259,6 +3277,7 @@ end
 if ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and World == 0x02 then --Load Spawn ID upon Entering STT
 	WriteInt(Save+0x353C,0x12121200) --Roxas Only
 	WriteByte(Save+0x1CFF,13) --STT Flag
+	WriteByte(Save+0x23EE,0)  -
 	for i = 0,143 do
 		WriteByte(Save+0x0310+i,ReadByte(Save+0x0230+i))
 	end
@@ -3267,8 +3286,9 @@ if ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) 
 	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
 	local PostSave = ReadByte(Save+0x1CFE)
 	local Progress = ReadByte(Save+0x1D0E)
-	local Visit --Battle Level & Barriers
-	RemoveTTBarriers()
+	local Visit --Battle Level & Blocks
+	local BGMSet = 0
+	RemoveTTBlocks()
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			Visit = 1
@@ -3276,48 +3296,53 @@ if ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) 
 			BitNot(Save+0x1CD6,0x02) --TT_203_END_L (Make Day 2 Work Properly)
 		elseif Progress == 1 then --Before Munny Collection
 			Visit = 2
-			WriteShort(Save+0x20EC,0xC449) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xC449) --Sandlot Block
 		elseif Progress == 2 then --Munny Collection
 			Visit = 2
-			WriteShort(Save+0x2080,0xC44B) --Central Station Barrier
-			WriteShort(Save+0x20E8,0x9F4A) --The Woods Barrier
-			WriteShort(Save+0x20EC,0x9F49) --Sandlot Barrier
+			WriteShort(Save+0x2080,0xC44B) --Central Station Block
+			WriteShort(Save+0x20E8,0x9F4A) --The Woods Block
+			WriteShort(Save+0x20EC,0x9F49) --Sandlot Block
 		elseif Progress == 3 then --Before Sandlot Dusk
 			Visit = 3
-			WriteShort(Save+0x20EC,0xC44C) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xC44C) --Sandlot Block
 		elseif Progress == 4 then --Before Twilight Thorn
 			Visit = 3
 		elseif Progress == 5 then --[Start of Day 4, Before Setzer]
 			Visit = 4
-			WriteShort(Save+0x20E8,0xC542) --The Woods Barrier
-			WriteShort(Save+0x2114,0xC540) --Station Plaza Barrier
+			WriteShort(Save+0x20E8,0xC542) --The Woods Block
+			WriteShort(Save+0x2114,0xC540) --Station Plaza Block
 		elseif Progress == 6 then --Start of Day 5
 			Visit = 5
 		elseif Progress == 7 then --Before Vivi's Wonder
 			Visit = 5
-			WriteByte(Save+0x2110,0xB791) --Tunnelway Barrier
+			WriteByte(Save+0x2110,0xB791) --Tunnelway Block
 		elseif Progress == 8 then --[After Vivi's Wonder, After Seven Wonders]
 			Visit = 5
 		elseif Progress == 9 then --Before Namine's Wonder
 			Visit = 5
-			WriteShort(Save+0x2080,0xC544) --Central Station Barrier
+			WriteShort(Save+0x2080,0xC544) --Central Station Block
 		elseif Progress == 10 then --[Before Back Street Nobodies, Before Entering the Mansion]
 			Visit = 6
-			WriteShort(Save+0x2114,0xC546) --Station Plaza Barrier
+			BGMSet = 2
+			WriteShort(Save+0x2114,0xC546) --Station Plaza Block
 		elseif Progress == 11 then --[Before Entering the Library, Before Entering Computer Room]
 			Visit = 6
-			WriteShort(Save+0x211C,0xC548) --The Old Mansion Barrier
+			BGMSet = 2
+			WriteShort(Save+0x211C,0xC548) --The Old Mansion Block
 		elseif Progress == 12 then --Before Axel II
 			Visit = 6
-			WriteShort(Save+0x211C,0xC548) --The Old Mansion Barrier
+			BGMSet = 2
+			WriteShort(Save+0x211C,0xC548) --The Old Mansion Block
 		elseif Progress == 13 then --After Axel II
 			Visit = 6
+			BGMSet = 2
 		end
 	else
 		Visit = 6
 	end
 	WriteByte(Save+0x3FF5,Visit)
-	WriteShort(Save+0x20E4,0x9F42) --Underground Concourse Barrier
+	WriteByte(Save+0x23EE,BGMSet) --STT Music: Lazy Afternoons & Sinister Sundowns
+	WriteShort(Save+0x20E4,0x9F42) --Underground Concourse Block
 	WriteByte(Save+0x1CFB,0) --Beam Flag Reset
 	--Load the Proper Spawn ID
 	local SpawnOffset = 0x310 + Room*6
@@ -3435,11 +3460,6 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 			WriteShort(Save+0x24F0,Store) --Change Equipped Keyblade
 		end
 	end
-	if ReadByte(Save+0x3FF5) == 6 and ReadByte(Save+0x1CFE) == 0 then --Day 6 & STT Not Cleared
-		WriteByte(Save+0x23EE,2) --STT Music: Sinister Sundowns (No Field Music)
-	else
-		WriteByte(Save+0x23EE,0) --STT Music: Lazy Afternoons & Sinister Sundowns
-	end
 else --Restore Outside STT
 	BitOr(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Sora)
 	BitOr(Save+0x239E,0x08) --Show Journal
@@ -3476,7 +3496,6 @@ else --Restore Outside STT
 		WriteByte(Save+0x35D0,ReadByte(Save+0x35D0)+1)
 	end
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
-	WriteByte(Save+0x23EE,1)  --TT Music: The Afternoon Streets & Working Together
 end
 --Faster Twilight Thorn Reaction Commands
 if Place == 0x2202 and Events(0x9D,0x9D,0x9D) then
@@ -3508,7 +3527,7 @@ if Place == 0x0B02 and Events(0x01,0x00,0x0C) then
 	WriteShort(Save+0x035C,0x01) --Sunset Hill EVT
 	WriteShort(Save+0x03E8,0x03) --Tunnelway MAP (Spawn Skateboard)
 	WriteShort(Save+0x03EC,0x00) --Tunnelway EVT
-	WriteShort(Save+0x2110,0x0000) --Tunnelway Barrier Removal
+	WriteShort(Save+0x2110,0x0000) --Tunnelway Unblock
 	BitOr(Save+0x2394,0x1E) --Minigame Finished Flags
 	BitOr(Save+0x1CDD,0x40) --TT_MISTERY_A_END (The Animated Bag)
 	BitOr(Save+0x1CDD,0x80) --TT_MISTERY_B_END (The Friend from Beyond the Wall)
@@ -3677,17 +3696,14 @@ if ReadByte(Save+0x1CFF) == 13 then
 		WriteShort(Save+0x1094,0x11) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x16) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF4,0x40) --LM_GET_ITEM_2
-		BitOr(Save+0x1DF6,0x08) --LM_SCENARIO_2_OPEN
 	elseif ReadShort(Save+0x10A0) == 0x07 and ReadByte(Save+0x1CF6) >= 2 then --Unlock 4th Song
 		WriteShort(Save+0x1094,0x0F) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x14) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF5,0x01) --LM_GET_ITEM_4
-		BitOr(Save+0x1DF7,0x02) --LM_SCENARIO_4_OPEN
 	elseif ReadShort(Save+0x10A0) == 0x0C and ReadByte(Save+0x1CF4) >= 3 then --Unlock 5th Song
 		WriteShort(Save+0x1094,0x0D) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x13) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF5,0x20) --LM_GET_ITEM_5
-		BitOr(Save+0x1DF7,0x10) --LM_SCENARIO_5_OPEN
 	end
 end
 --End of Visits -> Garden of Assemblage
