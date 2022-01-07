@@ -1,12 +1,12 @@
 --RAM Version
---Last Update: Removed Promise Charm path codes & added fixes from Rando build
+--Last Update: Some code cleanup and bugfixes
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with vanilla items.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.12'
+local VersionNum = 'GoA Version 1.52.13'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -30,6 +30,7 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	GMdal = 0x1F803C0 --Gummi Medal
 	GKill = 0x1F80856 --Gummi Kills
 	CamTyp = 0x0348750 --Camera Type
+	GamSpd = 0x0349E0C --Game Speed
 	CutNow = 0x035DE20 --Cutscene Timer
 	CutLen = 0x035DE28 --Cutscene Length
 	CutSkp = 0x035DE08 --Cutscene Skip
@@ -47,8 +48,8 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	Menu1    = 0x1C5FF18 --Menu 1 (main command menu)
 	NextMenu = 0x4
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
-	if ENGINE_VERSION < 4.1 then
-		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
+	if ENGINE_VERSION < 5.0 then
+		ConsolePrint('LuaFrontend is Outdated. Things might not work properly.',2)
 	end
 	ConsolePrint(VersionNum,0)
 	Platform = 1
@@ -68,6 +69,7 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	GMdal = 0x0729024 - 0x56454E
 	GKill = 0x0AF4906 - 0x56450E
 	CamTyp = 0x0716A58 - 0x56454E
+	GamSpd = 0x07151D4 - 0x56454E
 	CutNow = 0x0B62758 - 0x56450E
 	CutLen = 0x0B62774 - 0x56450E
 	CutSkp = 0x0B6275C - 0x56450E
@@ -204,38 +206,28 @@ end
 end
 
 function Faster(Toggle)
-if Platform == 0 then
-	if Toggle then
-		WriteByte(0x0349E1C,0x00) --Faster Speed
-		WriteByte(0x0349E20,0x00)
-	else
-		WriteByte(0x0349E1C,0x01) --Normal Speed
-		WriteByte(0x0349E20,0x01)
-	end
-elseif Platform == 1 then
-	if Toggle then
-		WriteFloat(0x07151D4 - 0x56454E,2) --Faster Speed
-	else
-		WriteFloat(0x07151D4 - 0x56454E,1) --Normal Speed		
-	end
+if Toggle then
+	WriteFloat(GamSpd,2) --Faster Speed
+elseif ReadFloat(GamSpd) > 1 then
+	WriteFloat(GamSpd,1) --Normal Speed
 end
 end
 
-function RemoveTTBarriers() --Remove All TT & STT Barriers
-WriteShort(Save+0x207C,0x0000) --Sunset Station
-WriteShort(Save+0x2080,0x0000) --Central Station
-WriteShort(Save+0x20E4,0x0000) --Underground Concourse
-WriteShort(Save+0x20E8,0x0000) --Woods
-WriteShort(Save+0x20EC,0x0000) --Sandlot
-WriteShort(Save+0x20F0,0x0000) --Tram Commons
-WriteShort(Save+0x20F4,0x0000) --The Mysterious Tower
-WriteShort(Save+0x20F8,0x0000) --Tower Wardrobe
-WriteShort(Save+0x20FC,0x0000) --Basement Corridor
-WriteShort(Save+0x2100,0x0000) --Mansion Library
-WriteShort(Save+0x2110,0x0000) --Tunnelway
-WriteShort(Save+0x2114,0x0000) --Station Plaza
-WriteShort(Save+0x211C,0x0000) --The Old Mansion
-WriteShort(Save+0x2120,0x0000) --Mansion Foyer
+function RemoveTTBlocks() --Remove All TT & STT Blocks
+WriteShort(Save+0x207C,0) --Sunset Station
+WriteShort(Save+0x2080,0) --Central Station
+WriteShort(Save+0x20E4,0) --Underground Concourse
+WriteShort(Save+0x20E8,0) --Woods
+WriteShort(Save+0x20EC,0) --Sandlot
+WriteShort(Save+0x20F0,0) --Tram Commons
+WriteShort(Save+0x20F4,0) --The Mysterious Tower
+WriteShort(Save+0x20F8,0) --Tower Wardrobe
+WriteShort(Save+0x20FC,0) --Basement Corridor
+WriteShort(Save+0x2100,0) --Mansion Library
+WriteShort(Save+0x2110,0) --Tunnelway
+WriteShort(Save+0x2114,0) --Station Plaza
+WriteShort(Save+0x211C,0) --The Old Mansion
+WriteShort(Save+0x2120,0) --Mansion Foyer
 end
 
 function _OnFrame()
@@ -381,8 +373,10 @@ if Place == 0x2002 then
 	Spawn('Short',0x0E,0x0B4,0x434) --Dusk -> Goofy
 	if Events(0x01,Null,0x01) then --Station of Serenity Weapons
 		BitNot(Save+0x1CD2,0x80) --TT_SCENARIO_1_START (Show Gameplay Elements)
-		BitOr(Save+0x1CEA,0x02)  --TT_SORA_OLD_END (Play as KH2 Sora)
 		BitOr(Save+0x1CEB,0x08)  --TT_ROXAS_START (Prepare Roxas' Flag)
+		BitOr(Save+0x1CEA,0x01)  --TT_ROXAS_END (Play as Sora)
+		BitOr(Save+0x1CEA,0x02)  --TT_SORA_OLD_END (Play as KH2 Sora)
+		BitOr(Save+0x239E,0x08)  --Show Journal
 		WriteByte(Pause,2) --Disable Pause
 		if ReadInt(CutLen) == 0x246 then --Dusks attack
 			WriteByte(CutSkp,1)
@@ -625,7 +619,6 @@ if Place == 0x000F then
 		elseif ReadByte(Save+0x1CFF) == 13 then --Simulated Twilight Town
 			WarpDoor = 0x21
 		end
-		WriteByte(Save+0x1CFF,0)
 	elseif Door == 0x02 then --Hollow Bastion
 		WarpDoor = 0x1D
 	elseif Door == 0x08 then --Port Royal
@@ -641,9 +634,10 @@ if Place == 0x000F then
 end
 --World Map Text
 if Platform == 1 and ReadInt(0x2AC6891-0x56450E) == 0xA5ABA844 then
-	WriteArray(0x2AC6891-0x56450E,{0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03})
-	WriteArray(0x2AC68B0-0x56450E,{0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03})
-	WriteArray(0x2ACA848-0x56450E,{0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03})
+	local Text = {0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03} --"Garden"
+	WriteArray(0x2AC6891-0x56450E,Text)
+	WriteArray(0x2AC68B0-0x56450E,Text)
+	WriteArray(0x2ACA848-0x56450E,Text)
 end
 --Battle Level
 if true then
@@ -829,189 +823,6 @@ if ReadByte(Save+0x3695) > ReadByte(Save+0x35C5) then
 	WriteShort(Save+0x2440,ReadShort(Save+0x2440)+5000)
 	WriteByte(Save+0x35C5,ReadByte(Save+0x35C5)+1)
 end
---DUMMY 23 = Maximum HP Increased!
-if ReadByte(Save+0x3671) > 0 then
-	local Bonus
-	if ReadByte(Save+0x2498) < 0x03 then --Non-Critical
-		Bonus = 5
-	else --Critical
-		Bonus = 2
-	end
-	WriteInt(Slot1+0x000,ReadInt(Slot1+0x000)+Bonus)
-	WriteInt(Slot1+0x004,ReadInt(Slot1+0x004)+Bonus)
-	WriteByte(Save+0x3671,ReadByte(Save+0x3671)-1)
-end
---DUMMY 24 = Maximum MP Increased!
-if ReadByte(Save+0x3672) > 0 then
-	local Bonus
-	if ReadByte(Save+0x2498) < 0x03 then --Non-Critical
-		Bonus = 10
-	else --Critical
-		Bonus = 5
-	end
-	WriteInt(Slot1+0x180,ReadInt(Slot1+0x180)+Bonus)
-	WriteInt(Slot1+0x184,ReadInt(Slot1+0x184)+Bonus)
-	WriteByte(Save+0x3672,ReadByte(Save+0x3672)-1)
-end
---DUMMY 25 = Drive Gauge Powered Up!
-if ReadByte(Save+0x3673) > 0 then
-	WriteByte(Slot1+0x1B1,ReadByte(Slot1+0x1B1)+1)
-	WriteByte(Slot1+0x1B2,ReadByte(Slot1+0x1B2)+1)
-	WriteByte(Save+0x3673,ReadByte(Save+0x3673)-1)
-end
---DUMMY 26 = Gained Armor Slot!
-if ReadByte(Save+0x3674) > 0 and ReadByte(Save+0x2500) < 8 then
-	WriteByte(Save+0x2500,ReadByte(Save+0x2500)+1)
-	WriteByte(Save+0x3674,ReadByte(Save+0x3674)-1)
-end
---DUMMY 27 = Gained Accessory Slot!
-if ReadByte(Save+0x3675) > 0 and ReadByte(Save+0x2501) < 8 then
-	WriteByte(Save+0x2501,ReadByte(Save+0x2501)+1)
-	WriteByte(Save+0x3675,ReadByte(Save+0x3675)-1)
-end
---DUMMY 16 = Gained Item Slot!
-if ReadByte(Save+0x3660) > 0 and ReadByte(Save+0x2502) < 8 then
-	WriteByte(Save+0x2502,ReadByte(Save+0x2502)+1)
-	WriteByte(Save+0x3660,ReadByte(Save+0x3660)-1)
-end
---Donald's Staff Active Abilities
-if true then
-	local Staff = ReadShort(Save+0x2604)
-	local Ability = false
-	if Staff == 0x04B then --Mage's Staff
-		Ability = 0x13F36
-	elseif Staff == 0x094 then --Hammer Staff
-		Ability = 0x13F46
-	elseif Staff == 0x095 then --Victory Bell
-		Ability = 0x13F56
-	elseif Staff == 0x097 then --Comet Staff
-		Ability = 0x13F76
-	elseif Staff == 0x098 then --Lord's Broom
-		Ability = 0x13F86
-	elseif Staff == 0x099 then --Wisdom Wand
-		Ability = 0x13F96
-	elseif Staff == 0x096 then --Meteor Staff
-		Ability = 0x13F66
-	elseif Staff == 0x09A then --Rising Dragon
-		Ability = 0x13FA6
-	elseif Staff == 0x09C then --Shaman's Relic
-		Ability = 0x13FC6
-	elseif Staff == 0x258 then --Shaman's Relic+
-		Ability = 0x14406
-	elseif Staff == 0x09B then --Nobody Lance
-		Ability = 0x13FB6
-	elseif Staff == 0x221 then --Centurion
-		Ability = 0x14316
-	elseif Staff == 0x222 then --Centurion+
-		Ability = 0x14326
-	elseif Staff == 0x1E2 then --Save the Queen
-		Ability = 0x14186
-	elseif Staff == 0x1F7 then --Save the Queen+
-		Ability = 0x142D6
-	elseif Staff == 0x223 then --Plain Mushroom
-		Ability = 0x14336
-	elseif Staff == 0x224 then --Plain Mushroom+
-		Ability = 0x14346
-	elseif Staff == 0x225 then --Precious Mushroom
-		Ability = 0x14356
-	elseif Staff == 0x226 then --Precious Mushroom+
-		Ability = 0x14366
-	elseif Staff == 0x227 then --Premium Mushroom
-		Ability = 0x14376
-	elseif Staff == 0x0A1 then --Detection Staff
-		Ability = 0x13FD6
-	end
-	if Ability then
-		Ability = ReadShort(Sys3+Ability)
-		if Ability == 0x0A5 then --Donald Fire
-			WriteShort(Save+0x26F6,0x80A5)
-			WriteByte(Sys3+0x11F0B,0)
-		elseif Ability == 0x0A6 then --Donald Blizzard
-			WriteShort(Save+0x26F6,0x80A6)
-			WriteByte(Sys3+0x11F23,0)
-		elseif Ability == 0x0A7 then --Donald Thunder
-			WriteShort(Save+0x26F6,0x80A7)
-			WriteByte(Sys3+0x11F3B,0)
-		elseif Ability == 0x0A8 then --Donald Cure
-			WriteShort(Save+0x26F6,0x80A8)
-			WriteByte(Sys3+0x11F53,0)
-		else
-			WriteShort(Save+0x26F6,0) --Remove Ability Slot 80
-			WriteByte(Sys3+0x11F0B,2) --Restore Original AP Costs
-			WriteByte(Sys3+0x11F23,2)
-			WriteByte(Sys3+0x11F3B,2)
-			WriteByte(Sys3+0x11F53,3)
-		end
-	end
-end
---Goofy's Shield Active Abilities
-if true then
-	local Shield = ReadShort(Save+0x2718)
-	local Ability = false
-	if Shield == 0x031 then --Knight's Shield
-		Ability = 0x13FE6
-	elseif Shield == 0x08B then --Adamant Shield
-		Ability = 0x13FF6
-	elseif Shield == 0x08C then --Chain Gear
-		Ability = 0x14006
-	elseif Shield == 0x08E then --Falling Star
-		Ability = 0x14026
-	elseif Shield == 0x08F then --Dreamcloud
-		Ability = 0x14036
-	elseif Shield == 0x090 then --Knight Defender
-		Ability = 0x14046
-	elseif Shield == 0x08D then --Ogre Shield
-		Ability = 0x14016
-	elseif Shield == 0x091 then --Genji Shield
-		Ability = 0x14056
-	elseif Shield == 0x092 then --Akashic Record
-		Ability = 0x14066
-	elseif Shield == 0x259 then --Akashic Record+
-		Ability = 0x14416
-	elseif Shield == 0x093 then --Nobody Guard
-		Ability = 0x14076
-	elseif Shield == 0x228 then --Frozen Pride
-		Ability = 0x14386
-	elseif Shield == 0x229 then --Frozen Pride+
-		Ability = 0x14396
-	elseif Shield == 0x1E3 then --Save the King
-		Ability = 0x14196
-	elseif Shield == 0x1F8 then --Save the King+
-		Ability = 0x142E6
-	elseif Shield == 0x22A then --Joyous Mushroom
-		Ability = 0x143A6
-	elseif Shield == 0x22B then --Joyous Mushroom+
-		Ability = 0x143B6
-	elseif Shield == 0x22C then --Majestic Mushroom
-		Ability = 0x143C6
-	elseif Shield == 0x22D then --Majestic Mushroom+
-		Ability = 0x143D6
-	elseif Shield == 0x22E then --Ultimate Mushroom
-		Ability = 0x143E6
-	elseif Shield == 0x032 then --Detection Shield
-		Ability = 0x14086
-	elseif Shield == 0x033 then --Test the King
-		Ability = 0x14096
-	end
-	if Ability then --Safeguard if none of the above (i.e. Main Menu)
-		Ability = ReadShort(Sys3+Ability)
-		if Ability == 0x1A7 then --Goofy Tornado
-			WriteShort(Save+0x280A,0x81A7)
-			WriteByte(Sys3+0x11F6B,0)
-		elseif Ability == 0x1AD then --Goofy Bash
-			WriteShort(Save+0x280A,0x81AD)
-			WriteByte(Sys3+0x11F83,0)
-		elseif Ability == 0x1A9 then --Goofy Turbo
-			WriteShort(Save+0x280A,0x81A9)
-			WriteByte(Sys3+0x11F9B,0)
-		else
-			WriteShort(Save+0x280A,0) --Remove Ability Slot 80
-			WriteByte(Sys3+0x11F6B,2) --Restore Original AP Costs
-			WriteByte(Sys3+0x11F83,2)
-			WriteByte(Sys3+0x11F9B,2)
-		end
-	end
-end
 --[[Enable Anti Form Forcing
 if ReadByte(Save+0x3524) == 6 then --In Anti Form
 	BitOr(Save+0x36C0,0x20) --Unlocks Anti Form
@@ -1144,7 +955,7 @@ if Place == 0x1212 and Events(0x04,0x00,0x04) then
 	if ReadByte(CamTyp) == 4 then
 		WriteShort(CutSkp,0x01) --Skip Door Opening Cutscene if Triggered by Talking to Riku
 	end
-	BitOr(Save+0x1ED4,0x40) --EH_eh_event_126 (Prevent Change when Entering Data Xemnas' Path)
+	BitOr(Save+0x1ED4,0x40) --EH_eh_event_134 (Prevent Change when Entering Data Xemnas' Path)
 end
 --[[Skip Dragon Xemnas
 if Place == 0x1D12 then
@@ -1197,12 +1008,10 @@ elseif Place == 0x0C08 and Events(Null,Null,0x01) then --Attack on the Camp
 elseif Place == 0x0708 and Events(Null,Null,0x02) then --Avalanche
 	WriteByte(Save+0x1D9F,3)
 	Spawn('Short',0x18,0x090,0) --Unequip Mulan's Auto Limit
-	if ReadInt(CutLen) == 0x064 then --After Summit FIght
-		DriveRefill()
-	end
+	DriveRefill()
 elseif Place == 0x0908 and Events(0x69,0x69,0x69) then --The Hero Who Saved the Day
 	WriteByte(Save+0x1D9F,4)
-elseif ReadByte(Save+0x1D9F) == 4 and ReadByte(Save+0x35AF) > 0 then --2nd Visit Unlocked
+elseif ReadByte(Save+0x1D9F) == 4 and ReadByte(Save+0x35AF) > 0 then --2nd Visit
 	WriteByte(Save+0x1D9F,5)
 	WriteShort(Save+0x0C14,0x12) --Bamboo Grove EVT
 	WriteShort(Save+0x0C18,0x0A) --Encampment BTL
@@ -1255,7 +1064,6 @@ if Place == 0x1A04 then
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			WarpRoom = 0x00
-			Spawn('Short',0x0A,0x0B6,0x00)
 		elseif Progress == 1 then --[After Parlor Heartless, Before Meeting Belle]
 			WarpRoom = 0x01
 		elseif Progress == 2 then --After Meeting Belle
@@ -1294,11 +1102,11 @@ if Place == 0x1A04 then
 	Spawn('Short',0x0A,0x090,0x00)
 end
 --World Progress
-if Place == 0x0105 and Events(Null,Null,0x01) then --Parlor Heartless
+if Place == 0x0105 and Events(Null,Null,0x01) then --The Parlor Ambush
 	WriteByte(Save+0x1D3F,1)
 elseif Place == 0x0205 and Events(Null,Null,0x02) then --A Familiar Voice
 	WriteByte(Save+0x1D3F,2)
-elseif Place == 0x0805 and Events(Null,Null,0x02) then --The Wardrobe
+elseif Place == 0x0805 and Events(Null,Null,0x02) then --Belle's Worries
 	WriteByte(Save+0x1D3F,3)
 elseif Place == 0x0A05 and Events(Null,Null,0x01) then --The Castle's Residents
 	WriteByte(Save+0x1D3F,4)
@@ -1315,11 +1123,11 @@ elseif ReadByte(Save+0x1D3F) == 7 and ReadByte(Save+0x35B3) > 0 then --2nd Visit
 	WriteShort(Save+0x07CE,0x00) --Dungeon BTL
 elseif Place == 0x0205 and Events(Null,Null,0x0A) then --Dressing Up
 	WriteByte(Save+0x1D3F,9)
-elseif Place == 0x0405 and Events(Null,Null,0x0A) then --Uninvited Guests
+elseif Place == 0x0305 and Events(Null,Null,0x0A) then --The Missing Rose
 	WriteByte(Save+0x1D3F,10)
-elseif Place == 0x0305 and Events(Null,Null,0x0B) then --Don't Give Up
+elseif Place == 0x0305 and Events(Null,Null,0x14) then --Don't Give Up
 	WriteByte(Save+0x1D3F,11)
-elseif Place == 0x0D05 and Events(Null,Null,0x0A) then --The Whirlwind Lancer: Xaldin
+elseif Place == 0x0D05 and Events(Null,Null,0x0A) then --Belle or the Rose?
 	BitNot(Save+0x1D35,0x01) --BB_216_END (Change Spawn ID in Next Cutscene Properly)
 elseif Place == 0x0605 and Events(Null,Null,0x0B) then --Stay With Me
 	BitOr(Save+0x1D34,0x80)  --BB_FM_XAL_RE_CLEAR (Change Portal Color)
@@ -1423,7 +1231,7 @@ if Place == 0x1A04 then
 	Spawn('Short',0x0A,0x0B0,0x00)
 end
 --World Progress
-if Place == 0x010E and Events(Null,Null,0x01) then --The Doctor's Research
+if Place == 0x010E and Events(Null,Null,0x01) then --The Professor's Experiment
 	WriteByte(Save+0x1E5F,1)
 elseif Place == 0x050E and Events(Null,Null,0x01) then --Christmas Town
 	WriteByte(Save+0x1E5F,2)
@@ -1590,7 +1398,7 @@ elseif Place == 0x0D07 and Events(Null,Null,0x02) then --Beyond the Doors
 	WriteByte(Save+0x1D7F,4)
 elseif Place == 0x0207 and Events(Null,Null,0x03) then --Behind the Curtain
 	WriteByte(Save+0x1D7F,5)
-elseif Place == 0x0307 and Events(Null,Null,0x03) then --Come Back Soon
+elseif Place == 0x0307 and Events(Null,Null,0x03) then --See You Again
 	WriteByte(Save+0x1D7F,6)
 elseif ReadByte(Save+0x1D7F) == 6 and ReadByte(Save+0x35C0) > 0 then --2nd Visit
 	WriteByte(Save+0x1D7F,7)
@@ -1643,9 +1451,9 @@ if Place == 0x1A04 and ReadByte(Save+0x1D7E) > 0 then
 		WriteByte(Save+0x1D7E,5)
 	end
 end
---Cutscene Skips
-if Place == 0x0A07 then
-	Spawn('Short',0x0C,0x0B8,0x0A) --Warp Back to Treasure Room
+--Skips
+if Place == 0x0A07 then --Warp Back to Treasure Room
+	Spawn('Short',0x0C,0x0B8,0x0A)
 	if ReadShort(Save+0x0AA0) == 0x03 then --After Treasure Room Heartless
 		Spawn('Float',0x02,0x048,0)      --Sora Rotation Y
 		Spawn('Float',0x02,0x080,-1530)  --Party 1 Position Z
@@ -1654,8 +1462,8 @@ if Place == 0x0A07 then
 		Spawn('Float',0x02,0x0C8,0)      --Party 2 Rotation Y
 		Spawn('Short',0x03,0x024,0x0002) --Door to Chasm of Challenges -> Peddler's Shop (Poor)
 	end
-elseif Place == 0x0E07 then
-	if ReadShort(Save+0x0AE8) == 0x0D then --Skip Chasing Jafar's Water Clone
+elseif Place == 0x0E07 then --Skip Chasing Jafar's Water Clone
+	if ReadShort(Save+0x0AE8) == 0x0D then
 		WriteShort(Save+0x0AE6,0x00) --Sandswept Ruins BTL
 		WriteShort(Save+0x0AE8,0x0E) --Sandswept Ruins EVT
 	end
@@ -1735,7 +1543,7 @@ end
 --World Progress
 if Place == 0x0306 and Events(Null,Null,0x02) then --Megara
 	WriteByte(Save+0x1D6F,1)
-elseif Place == 0x0A06 and Events(Null,Null,0x01) then --A Fleeing member of the Organization
+elseif Place == 0x0A06 and Events(Null,Null,0x01) then --A Fleeing Member of the Organization
 	WriteByte(Save+0x1D6F,2)
 elseif Place == 0x0406 and Events(Null,Null,0x01) then --The Exhausted Hero
 	WriteByte(Save+0x1D6F,3)
@@ -1745,7 +1553,7 @@ elseif Place == 0x0306 and Events(Null,Null,0x05) then --Arriving in the Underwo
 	WriteByte(Save+0x1D6F,5)
 elseif Place == 0x1106 and Events(0x7B,0x7B,0x7B) then --Regained Power
 	WriteByte(Save+0x1D6F,6)
-elseif Place == 0x0806 and Events(Null,Null,0x01) then --Presistent Ol' Pete
+elseif Place == 0x0806 and Events(Null,Null,0x01) then --Persistent Ol' Pete
 	WriteByte(Save+0x1D6F,7)
 elseif Place == 0x1206 and Events(0xAB,0xAB,0xAB) then --The Aftermath
 	WriteByte(Save+0x1D6F,8)
@@ -1753,12 +1561,13 @@ elseif Place == 0x1206 and Events(0xAB,0xAB,0xAB) then --The Aftermath
 elseif ReadByte(Save+0x1D6F) == 8 and ReadByte(Save+0x35AE) > 0 then --2nd Visit
 	WriteByte(Save+0x1D6F,9)
 	WriteShort(Save+0x0920,0x12) --Coliseum Gates (Destroyed) EVT
+	WriteShort(Save+0x0938,0x13) --Hades' Chamber EVT
 	if ReadShort(Save+0x0926) == 0x0A then
 		WriteShort(Save+0x0926,0x0B) --Underworld Entrance EVT
 	else
 		WriteShort(Save+0x0926,0x0C) --Underworld Entrance EVT
 	end
-elseif Place == 0x0306 and Events(Null,Null,0x14) then --(After) Sneaking into Hades' Chambers
+elseif Place == 0x0306 and Events(Null,Null,0x14) then --Sneaking into Hades' Chambers
 	WriteByte(Save+0x1D6F,10)
 elseif Place == 0x0606 and Events(Null,Null,0x0A) then --Voices from the Past
 	WriteByte(Save+0x1D6F,11)
@@ -1836,14 +1645,25 @@ if Place == 0x0306 and ReadShort(Save+0x239C)&0x07BA == 0 then
 end
 --Unlock All Paradox Cup after Goddess of Fate Cup
 if Place == 0x0D06 and Events(0xB7,0xB7,0xB7) then
-	WriteShort(Save+0x239C,ReadShort(Save+0x239C)|0x07BA)
+	BitOr(Save+0x239C,0x20) --Pain & Panic Paradox
+	BitOr(Save+0x239D,0x04) --Cerberus Paradox
+	BitOr(Save+0x239C,0x80) --Titan Paradox
+	BitOr(Save+0x239D,0x01) --Hades Paradox
 end
 --Unlock All Cups with Hades Cups Trophy
 if ReadByte(Save+0x3696) > 0 then
-	WriteShort(Save+0x239C,ReadShort(Save+0x239C)|0x07BA)
+	BitOr(Save+0x239C,0x02) --Pain & Panic
+	BitOr(Save+0x239D,0x02) --Cerberus
+	BitOr(Save+0x239C,0x08) --Titan
+	BitOr(Save+0x239C,0x10) --Goddess of Fate
+	BitOr(Save+0x239C,0x20) --Pain & Panic Paradox
+	BitOr(Save+0x239D,0x04) --Cerberus Paradox
+	BitOr(Save+0x239C,0x80) --Titan Paradox
+	BitOr(Save+0x239D,0x01) --Hades Paradox
 	if ReadByte(Save+0x1D6E) > 0 then --Make Hades Appear in His Chamber after 2nd Visit
 		WriteShort(Save+0x0936,0x15) --Hades' Chamber BTL
 		WriteShort(Save+0x0938,0x14) --Hades' Chamber EVT
+		BitOr(Save+0x1D5E,0x04) --HE_HADES_ON
 	end
 end
 --Zexion's Absent Silhouette Removal
@@ -1979,10 +1799,10 @@ function TT()
 if Place == 0x1A04 then
 	local PostSave = ReadByte(Save+0x1CFD)
 	local Progress = ReadByte(Save+0x1D0D)
-	local WarpRoom, WarpEvt
+	local WarpRoom
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
-			WarpEvt = 0x75
+			WarpRoom = 0x75
 		elseif Progress == 1 then --Before Station Plaza Nobodies
 			WarpRoom = 0x02
 		elseif Progress == 2 then --After Station Plaza Nobodies
@@ -1996,7 +1816,8 @@ if Place == 0x1A04 then
 		elseif Progress == 6 then --Post 1st Visit
 			WarpRoom = 0x02
 		elseif Progress == 7 then --2nd Visit
-			WarpEvt = 0x40
+			Spawn('Short',0x0A,0x12A,0x12) --Start in TWtNW
+			WarpRoom = 0x40
 		elseif Progress == 8 then --Before Sandlot Nobodies II
 			WarpRoom = 0x02
 		elseif Progress == 9 then --After Sandlot Nobodies II
@@ -2004,7 +1825,7 @@ if Place == 0x1A04 then
 		elseif Progress == 10 then --Post 2nd Visit
 			WarpRoom = 0x02
 		elseif Progress == 11 then --3rd Visit
-			WarpEvt = 0x77
+			WarpRoom = 0x77
 		elseif Progress == 12 then --[Before The Old Mansion Nobodies, After The Old Mansion Nobodies]
 			WarpRoom = 0x09
 		elseif Progress == 13 then --After Entering the Mansion Foyer
@@ -2027,17 +1848,14 @@ if Place == 0x1A04 then
 	elseif PostSave == 7 then --Tower: Sorcerer's Loft
 		WarpRoom = 0x1B
 	end
-	if WarpRoom then
+	if WarpRoom <= 50 then
 		Spawn('Short',0x0A,0x128,0x01)
 		Spawn('Short',0x0A,0x12C,WarpRoom)
 		Spawn('Short',0x0A,0x12E,0x63)
 		Spawn('Short',0x0A,0x130,0x00)
 	else
 		Spawn('Short',0x0A,0x128,0x02)
-		Spawn('Short',0x0A,0x130,WarpEvt)
-		if WarpEvt == 0x40 then
-			Spawn('Short',0x0A,0x12A,0x12)
-		end
+		Spawn('Short',0x0A,0x130,WarpRoom)
 	end
 end
 --World Progress
@@ -2054,8 +1872,7 @@ elseif Place == 0x1B02 and Events(Null,Null,0x03) then --The Journey Begins
 	WriteByte(Save+0x1D0D,5)
 elseif Place == 0x1C02 and Events(0x97,0x97,0x97) then --The Evil Fairy's Revival
 	WriteByte(Save+0x1D0D,6)
-	WriteByte(Save+0x1CFF,0)
-	WriteShort(Save+0x01C4,0x04) --Station Heights MAP (Jobs Unavailable)
+	WriteShort(Save+0x0334,0x04) --Station Heights MAP (Jobs Unavailable)
 	WriteShort(Save+0x03A8,0x01) --The Tower: Entryway BTL
 	WriteShort(Save+0x03C0,0x01) --Tower: Star Chamber BTL
 	WriteShort(Save+0x03C6,0x01) --Tower: Moon Chamber BTL
@@ -2100,7 +1917,6 @@ elseif Place == 0x0902 and Events(0x77,0x77,0x77) then --The Photograph
 	WriteShort(Save+0x0358,0x06) --Sunset Hill MAP (Visibility)
 	WriteShort(Save+0x0360,0x07) --The Woods BTL
 	WriteShort(Save+0x0362,0x00) --The Woods EVT
-	WriteShort(Save+0x0364,0x04) --The Old Mansion MAP (Despawn Skateboard)
 	WriteShort(Save+0x0366,0x00) --The Old Mansion BTL
 	WriteShort(Save+0x0368,0x05) --The Old Mansion EVT
 elseif Place == 0x0E02 and Events(Null,Null,0x08) then --Reuniting with the King
@@ -2112,11 +1928,10 @@ elseif Place == 0x2802 and Events(0xA1,0xA1,0xA1) then --His Last Words
 elseif Place == 0x0012 and Events(0x77,0x77,0x77) then --Those Who Remain
 	BitOr(Save+0x1CEB,0x10) --TT_FM_AXE_RE_CLEAR (Change Portal Color)
 	WriteByte(Save+0x1CFD,1) --Post-Story Save
-	WriteByte(Save+0x1CFF,0)
-	WriteShort(Save+0x0212,0x00) --Basement Hall MAP (TT Real)
-	WriteShort(Save+0x0214,0x07) --Basement Hall BTL
-	WriteShort(Save+0x021E,0x03) --Computer Room MAP (TT Real)
-	WriteShort(Save+0x0222,0x0F) --Computer Room EVT
+	WriteShort(Save+0x0382,0x00) --Basement Hall MAP (TT Real)
+	WriteShort(Save+0x0384,0x07) --Basement Hall BTL
+	WriteShort(Save+0x038E,0x03) --Computer Room MAP (TT Real)
+	WriteShort(Save+0x0392,0x0F) --Computer Room EVT
 	BitNot(Save+0x1CEE,0x0C) --TT_TT21 (Computer Room Flag Fix)
 end
 --End of Visits -> Garden of Assemblage
@@ -2171,7 +1986,9 @@ elseif Place == 0x0802 then --Prevent Promise Charm Removal (Change Command to B
 	Spawn('Short',0x0F,0x360,0x00)
 end
 --Spawn IDs
-if ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and (World == 0x02 or Place == 0x0112) then --Load Spawn ID upon Entering TT
+if ReadByte(Save+0x1CFF) == 8 and (Place == 0x1A04 or Place == 0x1402) then
+	WriteByte(Save+0x1CFF,0)
+elseif ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and (World == 0x02 or Place == 0x0112) then --Load Spawn ID upon Entering TT
 	WriteInt(Save+0x353C,0x12020100) --Full Party
 	WriteByte(Save+0x1CFF,8) --TT Flag
 	for i = 0,143 do
@@ -2182,61 +1999,62 @@ if ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) 
 	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
 	local PostSave = ReadByte(Save+0x1CFD)
 	local Progress = ReadByte(Save+0x1D0D)
-	local Visit --Battle Level & Barriers
-	RemoveTTBarriers()
+	local Visit --Battle Level & Blocks
+	RemoveTTBlocks()
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			Visit = 7
 		elseif Progress == 1 then --Before Station Plaza Nobodies
 			Visit = 7
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 2 then --After Station Plaza Nobodies
 			Visit = 7
-			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Barrier
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x20F4,0xCC6A) --The Tower Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Block
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x20F4,0xCC6A) --The Tower Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 3 then --[After The Tower Heartless, After Moon Chamber Heartless]
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
 		elseif Progress == 4 then --Before Talking to Yen Sid
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
-			WriteShort(Save+0x20F8,0x9F4E) --Tower: Wardrobe Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
+			WriteShort(Save+0x20F8,0x9F4E) --Tower: Wardrobe Block
 		elseif Progress == 5 then --After Talking to Yen Sid
 			Visit = 8
-			WriteShort(Save+0x20F4,0xC54E) --The Tower Barrier
+			WriteShort(Save+0x20F4,0xC54E) --The Tower Block
 		elseif Progress == 6 then --Post 1st Visit
 			Visit = 8
-			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Barrier
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x207C,0xCA3F) --Sunset Station Block
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 7 then --2nd Visit
 			Visit = 9
 		elseif Progress == 8 then --Before Sandlot Nobodies II
 			Visit = 9
-			WriteShort(Save+0x2080,0xC663) --Central Station Barrier
-			WriteShort(Save+0x20E4,0xC66D) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC665) --Mansion Foyer Barrier
+			WriteShort(Save+0x2080,0xC663) --Central Station Block
+			WriteShort(Save+0x20E4,0xC66D) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC665) --Mansion Foyer Block
 		elseif Progress == 9 then --After Sandlot Nobodies II
 			Visit = 9
-			WriteShort(Save+0x20E4,0xC66F) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC667) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xC66F) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC667) --Mansion Foyer Block
 		elseif Progress == 10 then --Post 2nd Visit
 			Visit = 9
-			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Barrier
-			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Barrier
+			WriteShort(Save+0x20E4,0xCB74) --Underground Concourse Block
+			WriteShort(Save+0x2120,0xC54A) --Mansion Foyer Block
 		elseif Progress == 11 then --3rd Visit
 			Visit = 10
 		elseif Progress == 12 or Progress == 13 or Progress == 14 then --[Before The Old Mansion Nobodies, Before Betwixt and Between Nobodies]
 			Visit = 10
-			WriteShort(Save+0x20EC,0xCB76) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xCB76) --Sandlot Block
 		end
 	else
 		Visit = 10
 	end
 	WriteByte(Save+0x3FF5,Visit)
+	WriteByte(Save+0x23EE,1) --TT Music: The Afternoon Streets & Working Together
 	--Load the Proper Spawn ID
 	local SpawnOffset = 0x310 + Room*6
 	if Evt < 0x20 then --Not a Special Event
@@ -2266,7 +2084,7 @@ if ReadByte(Save+0x1CFF) == 8 and false then
 end
 --Station Plaza Nobodies with Trinity Limit End Softlock Fix
 if Place == 0x0802 and Events(0x6C,0x6C,0x6C) and ReadInt(Point1) == 98 then --Hit Counter Almost Reached
-	WriteInt(CutLen,0x001) --End Trinity Limit Early
+	WriteInt(CutLen,1) --End Trinity Limit Early
 end
 --Lexaeus Absent Silhouette Removal
 if ReadShort(Save+0x032A) == 0x02 then
@@ -2283,6 +2101,11 @@ end
 end
 
 function HB()
+--Save Merlin's House's & Borough's Spawn IDs
+if Place == 0x1A04 then
+	WriteArray(Save+0x066A,ReadArray(Save+0x0646,6)) --Save Borough Spawn ID
+	WriteArray(Save+0x0664,ReadArray(Save+0x065E,6)) --Save Merlin's House Spawn ID
+end
 --Data Demyx -> Hollow Bastion
 if Place == 0x1A04 then
 	local PostSave = ReadByte(Save+0x1D2E)
@@ -2354,21 +2177,21 @@ if Place == 0x0004 and Events(Null,Null,0x01) then --Pete Enters the Castle
 	WriteShort(Save+0x0614,0x02) --Villain's Vale EVT
 elseif Place == 0x0D04 and Events(Null,Null,0x01) then --The Hollow Bastion Restoration Committee
 	WriteByte(Save+0x1D2F,1)
-elseif Place == 0x0D04 and Events(Null,Null,0x08) then --
+elseif Place == 0x0D04 and Events(Null,Null,0x08) then --Lost Memories
 	WriteByte(Save+0x1D2F,2)
 elseif ReadByte(Save+0x1D2F) == 2 and ReadByte(Save+0x3643) > 0 then --4th Visit
 	WriteByte(Save+0x1D2F,3)
-	WriteShort(Save+0x064C,0x02) --Marketplace MAP (Barrier Beyond Cloud)
+	WriteShort(Save+0x064C,0x02) --Marketplace MAP (Despawn Room Transition)
 	WriteShort(Save+0x0650,0x02) --Marketplace EVT
 elseif Place == 0x0D04 and Events(Null,Null,0x02) then --Cid's Report
 	WriteByte(Save+0x1D2F,4)
 elseif Place == 0x0604 and Events(Null,Null,0x01) then --The Underground Corridor
 	WriteByte(Save+0x1D2F,5)
-elseif Place == 0x0504 and Events(Null,Null,0x06) then --
+elseif Place == 0x0504 and Events(Null,Null,0x06) then --The Doodle on the Wall
 	WriteByte(Save+0x1D2F,6)
 elseif Place == 0x0604 and Events(Null,Null,0x02) then --Sephiroth
 	WriteByte(Save+0x1D2F,7)
-elseif Place == 0x0404 and Events(Null,Null,0x01) then --The Melodious Nocturne: Demyx
+elseif Place == 0x0404 and Events(Null,Null,0x01) then --Demyx
 	WriteByte(Save+0x1D2F,8)
 elseif Place == 0x0304 and Events(Null,Null,0x01) then --Goofy's Awake!
 	WriteByte(Save+0x1D2F,9)
@@ -2394,12 +2217,12 @@ elseif Place == 0x0504 and Events(Null,Null,0x0D) then --Wait for Us, Tron
 	WriteShort(Save+0x0662,0x0C) --Merlin's House EVT
 elseif Place == 0x0604 and Events(0x5E,0x5E,0x5E) then --Radiant Garden
 	BitOr(Save+0x1D26,0x20) --HB_FM_DEM_RE_CLEAR (Change Portal Color)
-	WriteShort(Save+0x1D2E,2) --Post-Story Save
+	WriteByte(Save+0x1D2E,2) --Post-Story Save
 	WriteShort(Save+0x067C,0x01) --Restoration Site (Destroyed) MAP (Door to GoA Revealed)
 elseif Place == 0x1904 and Events(Null,0x05,0x04) then --Transport to Remembrance Cleared
 	WriteShort(Save+0x06A8,0x04) --Transport to Remembrance BTL
 	WriteShort(Save+0x06AA,0x00) --Transport to Remembrance EVT
-	BitOr(Save+0x1D27,0x04) --HB_FM_13TSUURO_OUT
+	BitOr(Save+0x1D27,0x04) --HB_FM_13TSUURO_OUT (Prevent Changing GoA's Spawn IDs)
 	WriteByte(Save+0x3694,1) --Have 1 Promise Charm
 end
 --End of Visits -> Garden of Assemblage
@@ -2429,20 +2252,20 @@ if Place == 0x1A04 and ReadByte(Save+0x1D2E) > 0 then
 		WriteByte(Save+0x1D2E,4)
 	end
 end
---Cutscene Skips
+--Skips
 if Place == 0x0004 then --Villain's Vale Cutscenes
 	Spawn('Short',0x03,0x060,0x00) --Continue to 2nd Villain's Vale Cutscene
-	Spawn('Short',0x03,0x098,0x01) --World Map -> Marketplace
+	Spawn('Short',0x03,0x098,0x01) --2nd Cutscene -> Marketplace
 	Spawn('Short',0x03,0x09A,0x04)
 	Spawn('Short',0x03,0x09C,0x0A)
 	Spawn('Short',0x03,0x0A0,0x00)
 elseif Place == 0x0012 then --Skip to Extra Checks
-	Spawn('Short',0x03,0x050,0x01) --After Bailey Nobodies
+	Spawn('Short',0x03,0x050,0x01) --After Bailey Nobodies -> Merlin's House
 	Spawn('Short',0x03,0x054,0x0D)
 	if Events(0x74,0x74,0x74) then
 		WriteShort(Save+0x0662,0x08) --Merlin's House EVT
 	end
-	Spawn('Short',0x03,0x114,0x02) --After 1000 Heartless
+	Spawn('Short',0x03,0x114,0x02) --After 1000 Heartless -> A Box of Memories
 	Spawn('Short',0x03,0x11C,0x5C)
 elseif Place == 0x0504 then --Master Form & Sleeping Lion Shenanigans
 	Spawn('Short',0x17,0x432,0x32) --After SP Spawn Position
@@ -2457,13 +2280,12 @@ elseif Place == 0x0504 then --Master Form & Sleeping Lion Shenanigans
 	elseif Events(Null,Null,0x0C) then --During Sleeping Lion
 		WriteByte(Save+0x062E,0x07) --Ansem's Study MAP (Warp to After SP Later)
 		WriteByte(Save+0x0632,0x09) --Ansem's Study EVT
-	elseif Events(Null,Null,0x09) and Door == 0x00 then --Spawning to After SP
 		BitOr(Save+0x1D13,0x02) --HB_401_END
 	end
 elseif ReadShort(Save+0x062E) == 0x0C and ReadShort(Save+0x0632) == 0x0C then --Skip Sleeping Lion (5th Visit)
 	WriteShort(Save+0x062E,0x0B) --Ansem's Study MAP
 	WriteShort(Save+0x0632,0x0D) --Ansem's Study EVT
-elseif Place == 0x0404 then --After-Demyx Checkpoint
+elseif Place == 0x0404 then --Checkpoint in Castle Gate after Demyx
 	Spawn('Short',0x0A,0x148,0x01)
 	Spawn('Short',0x0A,0x14C,0x04)
 	Spawn('Short',0x0A,0x14E,0x01)
@@ -2497,20 +2319,26 @@ if ReadShort(Save+0x065E) == 0x00 or ReadShort(Save+0x065E) == 0x04 then
 	WriteShort(Save+0x065E,0x01) --Merlin's House MAP
 end
 --Ansem's Study Rearrangement
-if Place == 0x0504 then --Remove Space Paranoids Computer
-	Spawn('Short',0x07,0x034,0x000)
+if Place == 0x0504 then
 	if ReadByte(Save+0x3643) > 0 then --Heartless Manufactory Early Access (Membership Card)
-		WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Barrier Removal
+		WriteShort(Save+0x20D4,0) --Heartless Manufactory Unblock
 		Spawn('Int',0x01,0x5B0,0xC1C8F) --MAP 0x0D
 		Spawn('String',0x01,0x5FC,'m_11')
 		Spawn('Int',0x01,0x950,0xC1C8F) --MAP 0x0F
 		Spawn('String',0x01,0x9A4,'m_11')
 		Spawn('Int',0x01,0x10E0,0xC1C8F) --MAP 0x08
 		Spawn('String',0x01,0x112C,'m_11')
+		Spawn('Short',0x07,0x034,0x988) --Space Paranoids Computer -> Puzzle Piece
+		Spawn('Float',0x07,0x038,-2400) --Position X
+		Spawn('Float',0x07,0x03C,-50)   --Position Y
+		Spawn('Float',0x07,0x040,-1100) --Position Z
+		Spawn('Short',0x07,0x054,1)     --Piece ID
+	else
+		Spawn('Short',0x07,0x034,0x000) --Space Paranoids Computer -> Nothing
 	end
 end
 --After-Demyx Checkpoint
-if ReadByte(Save+0x1D2F) == 8 then
+if ReadByte(Save+0x1D2F) == 8 and World == 0x04 then
 	if Place == 0x0404 then --Before FF Fights
 		WriteShort(Save+0x0670,0x3E) --Ravine Trail MAP (FF Fights I)
 		WriteShort(Save+0x0672,0x3E) --Ravine Trail BTL
@@ -2521,16 +2349,14 @@ if ReadByte(Save+0x1D2F) == 8 then
 		WriteShort(Sys3+0x0CD10,0x91) --Castle Gate Music: Vim & Vigor (Field)
 		WriteShort(Sys3+0x0CD12,0x91) --Castle Gate Music: Vim & Vigor (Fight)
 	end
-	if Place == 0x1A04 then
-		WriteInt(Save+0x3544,0x12020100) --Add Goofy
-	elseif Place ~= 0x0404 and Place ~= 0x2004 and Place ~= 0x2104 and Place ~= 0x2204 and Place ~= 0x2604 then --Not in HB Org Arenas
+	if not(Place == 0x0404 or Place == 0x1A04 or Place == 0x2004 or Place == 0x2104 or Place == 0x2204 or Place == 0x2604) then --Not in HB Org Arenas or GoA
 		WriteInt(Save+0x3544,0x12120100) --Remove Goofy
 	end
 end
 --Skip Hollow Bastion 5th Visit
 if ReadShort(Save+0x0650) == 0x0A then
 	BitOr(Save+0x1D26,0x20) --HB_FM_DEM_RE_CLEAR (Change Portal Color)
-	WriteShort(Save+0x1D2E,2) --Post-Story Save
+	WriteByte(Save+0x1D2E,2) --Post-Story Save
 	WriteShort(Save+0x0618,0x00) --The Dark Depths BTL
 	WriteShort(Save+0x061A,0x16) --The Dark Depths EVT
 	WriteShort(Save+0x061E,0x02) --The Great Maw BTL
@@ -2546,7 +2372,7 @@ if ReadShort(Save+0x0650) == 0x0A then
 	WriteShort(Save+0x067C,0x01) --Restoration Site (Destroyed) MAP (Door to GoA Revealed)
 	WriteShort(Save+0x067E,0x0B) --Restoration Site (Destroyed) BTL
 	WriteShort(Save+0x0684,0x0B) --Bailey (Destroyed) BTL
-	WriteShort(Save+0x20D4,0x0000) --Heartless Manufactory Barrier Removal
+	WriteShort(Save+0x20D4,0) --Heartless Manufactory Unblock
 	BitOr(Save+0x1D19,0x10) --HB_508_END
 	BitOr(Save+0x1D1C,0x10) --HB_509_END
 	BitOr(Save+0x1D1C,0x20) --HB_hb09_ms501
@@ -2556,15 +2382,19 @@ if ReadShort(Save+0x0650) == 0x0A then
 	BitOr(Save+0x1D1D,0x02) --HB_514_END
 	BitOr(Save+0x1D22,0x40) --HB_hb_event_515
 	BitOr(Save+0x1D1D,0x08) --HB_516_END
+	BitOr(Save+0x1D1D,0x10) --HB_517_END
 	BitOr(Save+0x1D1D,0x20) --HB_518_END
 	BitOr(Save+0x1D1D,0x40) --HB_519_END
+	BitOr(Save+0x1D19,0x20) --HB_TR_202_END
 	BitOr(Save+0x1D19,0x40) --HB_501_END
 	BitOr(Save+0x1D21,0x04) --HB_hb_event_502
 	BitOr(Save+0x1D1A,0x04) --HB_503_END
+	BitOr(Save+0x1D1A,0x08) --HB_TR_tr09_ms205
 	BitOr(Save+0x1D1A,0x10) --HB_504_END
 	BitOr(Save+0x1D1A,0x20) --HB_505_END
 	BitOr(Save+0x1D1A,0x40) --HB_506_END
 	BitOr(Save+0x1D21,0x08) --HB_hb_event_507 (Hollow Bastion -> Radiant Garden)
+	BitOr(Save+0x1D24,0x02) --HB_ROXAS_KINOKO_ON
 end
 --Cavern of Remembrance Skip Softlock Prevention
 if Place == 0x1804 and PrevPlace == 0x1504 then --Mineshaft Lowest Level
@@ -2692,10 +2522,10 @@ function DC()
 if Place == 0x1A04 then
 	local PostSave = ReadByte(Save+0x1E1E)
 	local Progress = ReadByte(Save+0x1E1F)
-	local WarpRoom, WarpEvt
+	local WarpRoom
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
-			WarpEvt = 0x35
+			WarpRoom = 0x35
 		elseif Progress == 1 then --Before Entering Courtyard
 			WarpRoom = 0x06
 		elseif Progress == 2 then --[After Entering Courtyard, Before Minnie Escort]
@@ -2710,7 +2540,7 @@ if Place == 0x1A04 then
 	elseif PostSave == 3 then --Hall of the Cornerstone (Light)
 		WarpRoom = 0x05
 	end
-	if WarpRoom then
+	if WarpRoom <= 50 then
 		Spawn('Short',0x0A,0x188,0x01)
 		Spawn('Short',0x0A,0x18A,0x0C)
 		Spawn('Short',0x0A,0x18C,WarpRoom)
@@ -2718,7 +2548,7 @@ if Place == 0x1A04 then
 		Spawn('Short',0x0A,0x190,0x00)
 	else
 		Spawn('Short',0x0A,0x18A,0x0C)
-		Spawn('Short',0x0A,0x190,WarpEvt)
+		Spawn('Short',0x0A,0x190,WarpRoom)
 	end
 end
 --World Progress
@@ -2726,8 +2556,6 @@ if Place == 0x060C and Events(Null,Null,0x01) then --There's Something Strange G
 	WriteByte(Save+0x1E1F,1)
 elseif Place == 0x030C and Events(Null,Null,0x01) then --Welcome to Disney Castle
 	WriteByte(Save+0x1E1F,2)
-elseif Place == 0x000C and Events(Null,Null,0x01) then --Heartless? Here?
-	WriteArray(Save+0x0664,ReadArray(Save+0x065E,6)) --Save Merlin's House Spawn ID
 elseif Place == 0x040C and Events(Null,Null,0x02) then --The Strange Door
 	WriteByte(Save+0x1E1F,3)
 	WriteArray(Save+0x065E,ReadArray(Save+0x0664,6)) --Load Merlin's House Spawn ID
@@ -2773,19 +2601,17 @@ if Place == 0x1A04 and ReadByte(Save+0x1E1E) > 0 then
 		WriteByte(Save+0x1E1E,3)
 	end
 end
---Cutscene Skips
+--Skips
 if Place == 0x040C then
-	Spawn('Short',0x08,0x142,0x01) --Conditional Drive Refill
+	Spawn('Short',0x08,0x142,0x01) --Conditional Drive Refill (Start of 1st Visit)
 	Spawn('Short',0x08,0x150,0x01) --Skip World Map Visit
 	Spawn('Short',0x08,0x154,0x06)
 	Spawn('Short',0x08,0x15A,0x01)
 	Spawn('Short',0x08,0x07E,0x04) --Skip Hollow Bastion Visit
 	Spawn('Short',0x08,0x080,0x0D)
 	WriteInt(Save+0x3564,0x12020100) --Full Party
-end
---Lingering Will Defeated -> Rematch Defeated
-if Place == 0x070C then
-	Spawn('Short',0x05,0x0A8,0x02)
+elseif Place == 0x070C then --Get Both Terra's Rewards
+	Spawn('Short',0x05,0x0A8,0x02) --Terra Defeated -> Rematch Defeated
 	Spawn('Short',0x05,0x0AC,0x00)
 	Spawn('Short',0x05,0x0AE,0x00)
 	Spawn('Short',0x05,0x0B0,0x47)
@@ -2893,31 +2719,11 @@ if Place == 0x1A04 then
 	Spawn('Short',0x0A,0x1AE,WarpDoor)
 	Spawn('Short',0x0A,0x1B0,0x00)
 end
---End of Visits -> Garden of Assemblage
-if Place == 0x0511 then --1st Visit
-	Spawn('Short',0x0B,0x310,0x1A)
-	Spawn('Short',0x0B,0x312,0x20)
-	if Events(Null,Null,0x04) then
-		DriveRefill(true)
-	end
-elseif Place == 0x0911 then --2nd Visit
-	Spawn('Short',0x0B,0x14C,0x01)
-	Spawn('Short',0x0B,0x150,0x1A)
-	Spawn('Short',0x0B,0x152,0x20)
-	Spawn('Short',0x0B,0x154,0x00)
-elseif Place == 0x2104 then --Larxene
-	Spawn('Short',0x0A,0x19E,0x11)
-	Spawn('Short',0x0A,0x1A0,0x08)
-	Spawn('Short',0x0A,0x1A2,0x32)
-end
 --World Progress
 if Place == 0x0011 and Events(Null,Null,0x01) then --Tron
 	WriteByte(Save+0x1EBF,1)
 elseif ReadShort(Save+0x1994) == 0x15 then --Tron's Request (Skip HB Visit)
 	WriteShort(Save+0x1994,0x06) --Pit Cell EVT
-elseif Place == 0x0211 and Events(Null,Null,0x01) then --The Game Grid (Skip Light Cycle)
-	WriteShort(Save+0x19A0,0x02) --Game Grid EVT
-	WriteShort(Save+0x1994,0x07) --Pit Cell EVT
 elseif Place == 0x0311 and Events(0x4E,0x4E,0x4E) then --Buying Time
 	WriteByte(Save+0x1EBF,2)
 	Spawn('Short',0x18,0x090,0x00) --Unequip Tron's Auto Limit
@@ -2939,7 +2745,7 @@ elseif Place == 0x0011 and Events(Null,Null,0x0A) then --To the Game Grid
 elseif Place == 0x0211 and Events(Null,Null,0x0A) then --Tron's in Danger!
 	WriteByte(Save+0x1EBF,7)
 	WriteShort(Save+0x19AC,0x0A) --Hallway EVT
-elseif Place == 0x0411 and Events(Null,Null,0x0A) then --Facing Danger
+elseif Place == 0x0411 and Events(Null,Null,0x0A) then --Almost There
 	WriteByte(Save+0x1EBF,8)
 	WriteShort(Save+0x19B2,0x0A) --Communications Room EVT
 elseif Place == 0x0811 and Events(Null,Null,0x0A) then --The System's Core
@@ -2949,6 +2755,23 @@ elseif Place == 0x0911 and Events(0x3B,0x3B,0x3B) then --Destroying the MCP
 	WriteByte(Save+0x1EBE,2) --Post-Story Save
 elseif Place == 0x2104 and Events(0x81,0x81,0x81) then --Larxene Defeated
 	WriteByte(Save+0x1EBF,10)
+end
+--End of Visits -> Garden of Assemblage
+if Place == 0x0511 then --1st Visit
+	Spawn('Short',0x0B,0x310,0x1A)
+	Spawn('Short',0x0B,0x312,0x20)
+	if Events(Null,Null,0x04) then
+		DriveRefill(true)
+	end
+elseif Place == 0x0911 then --2nd Visit
+	Spawn('Short',0x0B,0x14C,0x01)
+	Spawn('Short',0x0B,0x150,0x1A)
+	Spawn('Short',0x0B,0x152,0x20)
+	Spawn('Short',0x0B,0x154,0x00)
+elseif Place == 0x2104 then --Larxene
+	Spawn('Short',0x0A,0x19E,0x11)
+	Spawn('Short',0x0A,0x1A0,0x08)
+	Spawn('Short',0x0A,0x1A2,0x32)
 end
 --Space Paranoids Post-Story Save
 if Place == 0x1A04 and ReadByte(Save+0x1EBE) > 0 then
@@ -2960,33 +2783,33 @@ if Place == 0x1A04 and ReadByte(Save+0x1EBE) > 0 then
 		WriteByte(Save+0x1EBE,3)
 	end
 end
---Cutscene Skips
+--Skips
 if ReadShort(Save+0x1994) == 0x04 then --Skip Light Cycle
 	WriteShort(Save+0x1990,0x03) --Pit Cell MAP (Despawn Party Members)
 	WriteShort(Save+0x1994,0x16) --Pit Cell EVT
 	WriteShort(Save+0x1998,0x01) --Canyon BTL
 	WriteShort(Save+0x19A2,0x02) --Dataspace MAP (Access Computer RC)
 	WriteShort(Save+0x19A6,0x01) --Dataspace EVT
-	WriteShort(Save+0x2128,0x0000) --Dataspace Barrier Removal
+	WriteShort(Save+0x2128,0) --Dataspace Unblock
 	BitOr(Save+0x1EB0,0x80) --TR_107_END
 	BitOr(Save+0x1D12,0x08) --HB_tr_107_END
 	BitOr(Save+0x1D12,0x10) --HB_301_END
 	BitOr(Save+0x1D12,0x20) --HB_302_END
 	BitOr(Save+0x1D12,0x80) --HB_304_END
 	BitOr(Save+0x1EB4,0x10) --TR_hb_304_END
-	BitOr(Save+0x1EB1,0x02) --TR_tr04_ms104
-	BitOr(Save+0x1EB1,0x04) --TR_116_END
+	BitOr(Save+0x1EB1,0x02) --TR_108_END
+	BitOr(Save+0x1EB1,0x04) --TR_109_END
 	BitOr(Save+0x1EB5,0x08) --TR_tr02_ms102a
 	BitOr(Save+0x1EB5,0x10) --TR_tr02_ms102b
 	BitOr(Save+0x1EB1,0x10) --TR_110_END
-elseif Place == 0x0011 then --2nd Visit Merlin's House -> Game Grid Skip
+elseif Place == 0x0011 then --2nd Visit Merlin's House -> Game Grid
 	Spawn('Short',0x0E,0x1D6,0x11)
 	Spawn('Short',0x0E,0x1D8,0x02)
 	BitOr(Save+0x1D19,0x40) --HB_501_END
 	BitOr(Save+0x1EB5,0x01) --TR_hb_501_END
-elseif Place == 0x0604 and Events(0x5D,0x5D,0x5D) then --2nd Visit Postern -> I/O Tower: Hallway Skip
+elseif Place == 0x0604 and Events(0x5D,0x5D,0x5D) then --2nd Visit Postern -> I/O Tower: Hallway
 	WriteByte(CutSkp,1)
-elseif Place == 0x0504 and Events(0x5F,0x5F,0x5F) then --2nd Visit Ansem's Study -> Communications Room Skip
+elseif Place == 0x0504 and Events(0x5F,0x5F,0x5F) then --2nd Visit Ansem's Study -> Communications Room
 	WriteByte(CutSkp,1)
 elseif Place == 0x0A11 and ReadByte(Save+0x1EBE) > 0 then --Skip Solar Sailer Heartless Post-Story
 	Spawn('Short',0x01,0x070,0x01)
@@ -3074,7 +2897,7 @@ if Place == 0x1A04 then
 	local WarpRoom
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
-			WarpRoom = 0x01
+			WarpRoom = 0x38
 		elseif Progress == 1 then --Before Munny Collection
 			WarpRoom = 0x02
 		elseif Progress == 2 then --Munny Collection
@@ -3113,19 +2936,20 @@ if Place == 0x1A04 then
 	elseif PostSave == 5 then --Mansion: Computer Room
 		WarpRoom = 0x15
 	end
-	if WarpRoom == 0x01 then
-		Spawn('Short',0x0A,0x1C8,0x02)
-		Spawn('Short',0x0A,0x1CA,0x02)
-		Spawn('Short',0x0A,0x1D0,0x38)
-	else
+	if WarpRoom <= 50 then
 		Spawn('Short',0x0A,0x1C8,0x01)
 		Spawn('Short',0x0A,0x1CA,0x02)
 		Spawn('Short',0x0A,0x1CC,WarpRoom)
 		Spawn('Short',0x0A,0x1CE,0x63)
 		Spawn('Short',0x0A,0x1D0,0x00)
-		if WarpRoom == 0x15 and ReadByte(Save+0x1CFB) == 1 then --Computer Room Beam
-			Spawn('Short',0x0A,0x1FE,0x3B)
+		if WarpRoom == 0x15 and ReadByte(Save+0x1CF0) == 1 then --Computer Room Beam
+			Spawn('Short',0x0A,0x1CE,0x3B)
 		end
+	else
+		Spawn('Short',0x0A,0x1C8,0x02)
+		Spawn('Short',0x0A,0x1CA,0x02)
+		Spawn('Short',0x0A,0x1D0,0x38)
+	 
 	end
 end
 --World Progress
@@ -3135,8 +2959,10 @@ elseif Place == 0x0602 and Events(Null,Null,0x01) then --It's a Promise
 	WriteByte(Save+0x1D0E,2)
 elseif Place == 0x0602 and ReadShort(Save+0x0338) == 0x0C and (Events(0x59,0x59,0x59) or Events(0x5A,0x5A,0x5A) or Events(0x5B,0x5B,0x5B)) then --End Day 2 Early 1
 	WriteShort(Save+0x0338,0x0D) --Station Heights EVT
+	BitOr(Save+0x1CEB,0x80) --TT_206_END_work03
 elseif Place == 0x0702 and ReadShort(Save+0x033E) == 0x0C and (Events(0x64,0x64,0x64) or Events(0x65,0x65,0x65) or Events(0x66,0x66,0x66)) then --End Day 2 Early 2
 	WriteShort(Save+0x033E,0x0D) --Tram Common EVT
+	BitOr(Save+0x1CEB,0x80) --TT_206_END_work03
 elseif ReadShort(Save+0x0320) == 0x16 then --Keep Munny after Day 2
 	WriteShort(Save+0x0320,0x00) --The Usual Spot EVT
 elseif Place == 0x0102 and Events(0x3A,0x3A,0x3A) then --Awakened by an Illusion
@@ -3149,7 +2975,7 @@ elseif Place == 0x0102 and Events(0x3C,0x3C,0x3C) then --A Hazy Morning
 	WriteByte(Save+0x1D0E,6)
 elseif Place == 0x0902 and Events(Null,Null,0x0C) then --Seeking Out the Wonders
 	WriteByte(Save+0x1D0E,7)
-elseif Place == 0x2402 and Events(0x9F,0x9F,0x9F) then --Moans from the Tunnel
+elseif Place == 0x2402 and Events(Null,Null,0x02) then --Moans from the Tunnel
 	WriteByte(Save+0x1D0E,8)
 elseif Place == 0x0802 and Events(0x73,0x73,0x73) then --The Seventh Wonder
 	WriteByte(Save+0x1D0E,9)
@@ -3166,13 +2992,14 @@ elseif Place == 0x1302 and Events(0x88,0x88,0x88) then --In the Next Life
 	WriteShort(Save+0x0366,0x01) --The Old Mansion BTL
 	WriteShort(Save+0x036C,0x01) --Mansion Foyer BTL
 	WriteShort(Save+0x0372,0x01) --Dining Room BTL
-	WriteShort(Save+0x2114,0x0000) --Station Plaza Barrier Removal
-	WriteShort(Save+0x211C,0x0000) --The Old Mansion Barrier Removal
+	WriteShort(Save+0x2114,0) --Station Plaza Unblock
+	WriteShort(Save+0x211C,0) --The Old Mansion Unblock
 	DriveRefill()
-elseif Place == 0x1702 and Events(Null,Null,0x01) then --My Summer Vacation Is Over
+elseif Place == 0x1702 and Events(Null,Null,0x01) then --DiZ, Servant of the World
 	BitOr(Save+0x1ED9,0x40) --EH_FM_ROX_RE_CLEAR (Change Portal Color)
-	WriteByte(Save+0x1CFE,1) --Post-Story Save
+	WriteByte(Save+0x1CFE,5) --Post-Story Save
 	WriteByte(Save+0x1CFF,0)
+	WriteShort(Save+0x02B8,0x16) --Basement Corridor EVT
 	WriteShort(Save+0x02BE,0x00) --Pod Room EVT
 end
 --End of Visits -> Garden of Assemblage
@@ -3198,12 +3025,18 @@ if Place == 0x1A04 and ReadByte(Save+0x1CFE) > 0 and Door == 0x21 then
 	end
 end
 --Skip Station of Serenity Weapons
-if Place == 0x2002 then --Skip Station of Serenity Weapons
+if Place == 0x2002 then
 	Spawn('Short',0x0A,0x140,0x02)
 	Spawn('Short',0x0A,0x148,0x9A)
 end
 --Spawn IDs
-if ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and World == 0x02 then --Load Spawn ID upon Entering STT
+if ReadByte(Save+0x1CFF) == 13 and (Place == 0x1A04 or Place == 0x1512) then
+	WriteByte(Save+0x1CFF,0)
+	BitOr(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Sora)
+	BitOr(Save+0x239E,0x08) --Show Journal
+elseif ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and World == 0x02 then --Load Spawn ID upon Entering STT
+	BitNot(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Roxas)
+	BitNot(Save+0x239E,0x08) --Hide Journal
 	WriteInt(Save+0x353C,0x12121200) --Roxas Only
 	WriteByte(Save+0x1CFF,13) --STT Flag
 	for i = 0,143 do
@@ -3214,58 +3047,63 @@ if ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) 
 	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
 	local PostSave = ReadByte(Save+0x1CFE)
 	local Progress = ReadByte(Save+0x1D0E)
-	local Visit --Battle Level & Barriers
-	RemoveTTBarriers()
+	local Visit --Battle Level & Blocks
+	local BGMSet = 0
+	RemoveTTBlocks()
 	if PostSave == 0 then
 		if Progress == 0 then --1st Visit
 			Visit = 1
-			WriteShort(Save+0x0366,0x00) --The Old Mansion BTL
 			BitNot(Save+0x1CD6,0x02) --TT_203_END_L (Make Day 2 Work Properly)
 		elseif Progress == 1 then --Before Munny Collection
 			Visit = 2
-			WriteShort(Save+0x20EC,0xC449) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xC449) --Sandlot Block
 		elseif Progress == 2 then --Munny Collection
 			Visit = 2
-			WriteShort(Save+0x2080,0xC44B) --Central Station Barrier
-			WriteShort(Save+0x20E8,0x9F4A) --The Woods Barrier
-			WriteShort(Save+0x20EC,0x9F49) --Sandlot Barrier
+			WriteShort(Save+0x2080,0xC44B) --Central Station Block
+			WriteShort(Save+0x20E8,0x9F4A) --The Woods Block
+			WriteShort(Save+0x20EC,0x9F49) --Sandlot Block
 		elseif Progress == 3 then --Before Sandlot Dusk
 			Visit = 3
-			WriteShort(Save+0x20EC,0xC44C) --Sandlot Barrier
+			WriteShort(Save+0x20EC,0xC44C) --Sandlot Block
 		elseif Progress == 4 then --Before Twilight Thorn
 			Visit = 3
 		elseif Progress == 5 then --[Start of Day 4, Before Setzer]
 			Visit = 4
-			WriteShort(Save+0x20E8,0xC542) --The Woods Barrier
-			WriteShort(Save+0x2114,0xC540) --Station Plaza Barrier
+			WriteShort(Save+0x20E8,0xC542) --The Woods Block
+			WriteShort(Save+0x2114,0xC540) --Station Plaza Block
 		elseif Progress == 6 then --Start of Day 5
 			Visit = 5
 		elseif Progress == 7 then --Before Vivi's Wonder
 			Visit = 5
-			WriteByte(Save+0x2110,0xB791) --Tunnelway Barrier
+			WriteShort(Save+0x2110,0xB791) --Tunnelway Block
 		elseif Progress == 8 then --[After Vivi's Wonder, After Seven Wonders]
 			Visit = 5
 		elseif Progress == 9 then --Before Namine's Wonder
 			Visit = 5
-			WriteShort(Save+0x2080,0xC544) --Central Station Barrier
+			WriteShort(Save+0x2080,0xC544) --Central Station Block
 		elseif Progress == 10 then --[Before Back Street Nobodies, Before Entering the Mansion]
 			Visit = 6
-			WriteShort(Save+0x2114,0xC546) --Station Plaza Barrier
+			BGMSet = 2
+			WriteShort(Save+0x2114,0xC546) --Station Plaza Block
 		elseif Progress == 11 then --[Before Entering the Library, Before Entering Computer Room]
 			Visit = 6
-			WriteShort(Save+0x211C,0xC548) --The Old Mansion Barrier
+			BGMSet = 2
+			WriteShort(Save+0x211C,0xC548) --The Old Mansion Block
 		elseif Progress == 12 then --Before Axel II
 			Visit = 6
-			WriteShort(Save+0x211C,0xC548) --The Old Mansion Barrier
+			BGMSet = 2
+			WriteShort(Save+0x211C,0xC548) --The Old Mansion Block
 		elseif Progress == 13 then --After Axel II
 			Visit = 6
+			BGMSet = 2
 		end
 	else
 		Visit = 6
 	end
 	WriteByte(Save+0x3FF5,Visit)
-	WriteShort(Save+0x20E4,0x9F42) --Underground Concourse Barrier
-	WriteByte(Save+0x1CFB,0) --Beam Flag Reset
+	WriteByte(Save+0x23EE,BGMSet) --STT Music: Lazy Afternoons & Sinister Sundowns
+	WriteShort(Save+0x20E4,0x9F42) --Underground Concourse Block
+	WriteByte(Save+0x1CF0,0) --Beam Flag Reset
 	--Load the Proper Spawn ID
 	local SpawnOffset = 0x310 + Room*6
 	if Evt < 0x20 then --Not a Special Event
@@ -3305,8 +3143,6 @@ if ReadByte(Save+0x1CFF) == 13 then
 end
 --Simulated Twilight Town Adjustments
 if ReadByte(Save+0x1CFF) == 13 then --STT Removals
-	BitNot(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Roxas)
-	BitNot(Save+0x239E,0x08) --Hide Journal
 	if ReadShort(Save+0x25D2)&0x8000 == 0x8000 then --Dodge Roll
 		BitNot(Save+0x25D3,0x80)
 		BitOr(Save+0x1CF1,0x01)
@@ -3352,7 +3188,7 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 		WriteByte(Save+0x1CF8,math.random(3))
 	end
 	if Place == 0x0402 and Events(0x4C,0x4C,0x4C) then --Sandlot Weapons
-		if Equip ~= 0x180 and Equip ~= 0x1F5 and Equip ~= 0x1F6 then
+		if not(Equip == 0x180 or Equip == 0x1F5 or Equip == 0x1F6) then
 			WriteByte(Save+0x1CF8,0) --Reset Struggle Weapon Flag
 		elseif ReadByte(Save+0x1CF8) == 0 then
 			if Equip == 0x180 then --Struggle Sword
@@ -3382,14 +3218,7 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 			WriteShort(Save+0x24F0,Store) --Change Equipped Keyblade
 		end
 	end
-	if ReadByte(Save+0x3FF5) == 6 and ReadByte(Save+0x1CFE) == 0 then --Day 6 & STT Not Cleared
-		WriteByte(Save+0x23EE,2) --STT Music: Sinister Sundowns (No Field Music)
-	else
-		WriteByte(Save+0x23EE,0) --STT Music: Lazy Afternoons & Sinister Sundowns
-	end
 else --Restore Outside STT
-	BitOr(Save+0x1CEA,0x01) --TT_ROXAS_END (Play as Sora)
-	BitOr(Save+0x239E,0x08) --Show Journal
 	if ReadByte(Save+0x1CF1)&0x01 == 0x01 then --Dodge Roll
 		BitOr(Save+0x25D3,0x80)
 		BitNot(Save+0x1CF1,0x01)
@@ -3423,25 +3252,21 @@ else --Restore Outside STT
 		WriteByte(Save+0x35D0,ReadByte(Save+0x35D0)+1)
 	end
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
-	WriteByte(Save+0x23EE,1)  --TT Music: The Afternoon Streets & Working Together
 end
 --Faster Twilight Thorn Reaction Commands
 if Place == 0x2202 and Events(0x9D,0x9D,0x9D) then
-	WriteShort(Save+0x03DE,0x00) --Station of Awakening BTL (Used as an STT Flag)
 	if ReadInt(CutLen) == 0x40 then --RC Start
-		BitOr(Save+0x1CFB,0x02)
+		BitOr(Save+0x1CF1,0x10)
 	elseif ReadInt(CutLen) == 0x16C and ReadInt(CutNow) == 0x16C then --Break Raid Succeed
-		BitNot(Save+0x1CFB,0x02)
+		BitNot(Save+0x1CF1,0x10)
 	elseif ReadInt(CutLen) == 0x260 and ReadInt(CutNow) == 0x260 then --Break Raid Failed
-		BitNot(Save+0x1CFB,0x02)
+		BitNot(Save+0x1CF1,0x10)
 	elseif ReadInt(CutLen) == 0x04D then --Break Raid Kill
-		BitNot(Save+0x1CFB,0x02)
+		BitNot(Save+0x1CF1,0x10)
 	end
-	if ReadByte(Save+0x1CFB)&0x02 == 0x02 then
+	if ReadByte(Save+0x1CF1)&0x10 == 0x10 then
 		Faster(true)
-	elseif Platform == 0 then
-		Faster(false)
-	elseif Platform == 1 and ReadFloat(0x07151D4) > 1 then --Exclude death cutscene
+	else
 		Faster(false)
 	end
 end
@@ -3455,7 +3280,7 @@ if Place == 0x0B02 and Events(0x01,0x00,0x0C) then
 	WriteShort(Save+0x035C,0x01) --Sunset Hill EVT
 	WriteShort(Save+0x03E8,0x03) --Tunnelway MAP (Spawn Skateboard)
 	WriteShort(Save+0x03EC,0x00) --Tunnelway EVT
-	WriteShort(Save+0x2110,0x0000) --Tunnelway Barrier Removal
+	WriteShort(Save+0x2110,0x0000) --Tunnelway Unblock
 	BitOr(Save+0x2394,0x1E) --Minigame Finished Flags
 	BitOr(Save+0x1CDD,0x40) --TT_MISTERY_A_END (The Animated Bag)
 	BitOr(Save+0x1CDD,0x80) --TT_MISTERY_B_END (The Friend from Beyond the Wall)
@@ -3465,20 +3290,17 @@ if Place == 0x0B02 and Events(0x01,0x00,0x0C) then
 	BitOr(Save+0x1CDE,0x04) --TT_506_END_L
 end--]]
 --Beam -> Garden of Assemblage
-if ReadShort(Save+0x0392) == 0x00 then --Beam Event Trigger Spawn
-	WriteShort(Save+0x0392,0x10) --Computer Room EVT
-elseif Place == 0x1502 and ReadByte(Save+0x1CFF) == 13 then
-	Spawn('Int',0x01,0x220,0x00099) --Show Beam
-	Spawn('String',0x01,0x254,'m_81') --Spawn Beam RC
-	Spawn('Short',0x10,0x55A,0x04) --Warp Pointer to Garden of Assemblage
-	Spawn('Short',0x10,0x55C,0x1A)
-	Spawn('Short',0x10,0x55E,0x21)
-	Spawn('Short',0x10,0x552,0xC58) --b 11 0001011 000
-	--Same as BitOr(Save+0x1CFB,0x01). Also stops the game from editing the spawn IDs.
-elseif Place == 0x1A04 and Door == 0x21 and ReadByte(Save+0x1CFB) == 1 then --Exited STT By Beam
-	WriteByte(Save+0x1CFF,0)
-	if ReadByte(Save+0x1CFE) > 0 then --Post-Story Save
-		WriteByte(Save+0x1CFE,5)
+if ReadByte(Save+0x1CFF) == 13 then
+	if ReadShort(Save+0x0392) == 0x00 then --Beam Event Trigger Spawn
+		WriteShort(Save+0x0392,0x10) --Computer Room EVT
+	elseif Place == 0x1502 then
+		Spawn('Int',0x01,0x220,0x00099) --Show Beam
+		Spawn('String',0x01,0x254,'m_81') --Spawn Beam RC
+		Spawn('Short',0x10,0x55A,0x04) --Warp Pointer to Garden of Assemblage
+		Spawn('Short',0x10,0x55C,0x1A)
+		Spawn('Short',0x10,0x55E,0x21)
+		Spawn('Short',0x10,0x552,0xC00) --DI_START (use as dummy flag)
+		--Same as BitOr(Save+0x1CF0,0x01). Also stops the game from editing the spawn IDs.
 	end
 end
 end
@@ -3506,10 +3328,7 @@ elseif Place == 0x2204 and Events(0x00,0x00,0x7C) then --Zexion -> 100 Acre Wood
 	WriteByte(CutSkp,1)
 end
 --0th Visit Adjustments
-if Place == 0x0009 and Events(0x00,Null,Null) then --0th Visit
-	WriteArray(Save+0x066A,ReadArray(Save+0x0646,6)) --Save Borough Spawn ID
-	WriteArray(Save+0x0664,ReadArray(Save+0x065E,6)) --Save Merlin's House Spawn ID
-elseif Place == 0x0D04 and Events(0x65,0x65,0x65) and PrevPlace == 0x0209 then --Lost Memories
+if Place == 0x0D04 and Events(0x65,0x65,0x65) and PrevPlace == 0x0209 then --Lost Memories
 	WriteByte(Save+0x1DBF,1)
 	WriteArray(Save+0x0646,ReadArray(Save+0x066A,6)) --Load Borough Spawn ID
 	WriteArray(Save+0x065E,ReadArray(Save+0x0664,6)) --Load Merlin's House Spawn ID
@@ -3557,7 +3376,7 @@ if ReadShort(Save+0x0D90) == 0x00 then
 	WriteByte(Save+0x1DBF,1)
 	WriteShort(Save+0x0D90,0x02) --The Hundred Acre Wood MAP (Pooh's House Only)
 	WriteShort(Save+0x0DA0,0x16) --Pooh's House EVT
-	BitOr(Save+0x1D16,0x02) --HB_START_Pooh
+	BitOr(Save+0x1D16,0x02) --HB_START_pooh
 	BitOr(Save+0x1D16,0x04) --HB_901_END
 	BitOr(Save+0x1D16,0x08) --HB_902_END
 	BitOr(Save+0x1D16,0x20) --HB_903_END
@@ -3576,22 +3395,22 @@ if ReadShort(Save+0x0D90) == 0x00 then
 	BitOr(Save+0x1D17,0x02) --HB_po_008_END
 	BitOr(Save+0x1D17,0x08) --HB_907_END
 end
---Faster A Blustery Rescue
-if Place == 0x0609 then --In Minigame
-	WriteByte(BGM,0x9F) --Music Change
+--Faster Minigames
+if Place == 0x0609 then --A Blustery Rescue
 	if ReadByte(Cntrl) == 0 then --Minigame Started
 		Faster(true)
 	end
 elseif Place == 0x0409 then --Minigame Ended
 	Faster(false)
-end
---Faster Hunny Slider
-if Place == 0x0709 then --In Minigame
+elseif Place == 0x0709 then --Hunny Slider
 	if ReadByte(Cntrl) == 0 then --Minigame Started
 		Faster(true)
 	end
 elseif Place == 0x0309 then --Minigame Ended
 	Faster(false)
+elseif Place == 0x0909 then --Fix Vanilla Spooky Cave Bug
+	BitNot(Save+0x1DBA,0x01) --PO_402_END_L
+	BitNot(Save+0x1DBA,0x02) --PO_402_END_ON
 end
 end
 
@@ -3624,17 +3443,14 @@ if ReadByte(Save+0x1CFF) == 13 then
 		WriteShort(Save+0x1094,0x11) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x16) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF4,0x40) --LM_GET_ITEM_2
-		BitOr(Save+0x1DF6,0x08) --LM_SCENARIO_2_OPEN
 	elseif ReadShort(Save+0x10A0) == 0x07 and ReadByte(Save+0x1CF6) >= 2 then --Unlock 4th Song
 		WriteShort(Save+0x1094,0x0F) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x14) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF5,0x01) --LM_GET_ITEM_4
-		BitOr(Save+0x1DF7,0x02) --LM_SCENARIO_4_OPEN
 	elseif ReadShort(Save+0x10A0) == 0x0C and ReadByte(Save+0x1CF4) >= 3 then --Unlock 5th Song
 		WriteShort(Save+0x1094,0x0D) --Triton's Grotto EVT
 		WriteShort(Save+0x10A0,0x13) --Undersea Courtyard EVT
 		BitOr(Save+0x1DF5,0x20) --LM_GET_ITEM_5
-		BitOr(Save+0x1DF7,0x10) --LM_SCENARIO_5_OPEN
 	end
 end
 --End of Visits -> Garden of Assemblage
@@ -3672,9 +3488,9 @@ end
 
 function Data()
 --Twilight Town -> Station of Calling
-if Place == 0x1302 and ReadByte(Save+0x1CFD) > 0 and ReadByte(Save+0x1CFF) == 8 then 
-	Spawn('Short',0x06,0x024,0x0021) --Door to Betwixt & Between -> Station of Calling
-elseif Place == 0x1602 and ReadByte(Save+0x1CFE) > 0 and ReadByte(Save+0x1CFF) == 13 then
+if Place == 0x1302 and ReadByte(Save+0x1CFD) > 0 and ReadByte(Save+0x1CFF) == 8 then --TT
+	Spawn('Short',0x06,0x024,0x0021)
+elseif Place == 0x1602 and ReadByte(Save+0x1CFE) > 0 and ReadByte(Save+0x1CFF) == 13 then --STT
 	Spawn('Short',0x04,0x024,0x0021)
 end
 --Go to Station of Calling
@@ -3824,7 +3640,8 @@ end
 [Save+0x066A,Save+0x066F] Borough Spawn IDs
 Save+0x06B2 Genie Crash Fix
 [Save+0x07F0,Save+0x07FB] Mrs Potts' Minigame Location
-Save+0x1CF1 STT Dodge Roll, STT Trinity Limit
+Save+0x1CF0 STT Computer Beam
+Save+0x1CF1 STT Dodge Roll, STT Trinity Limit, Twilight Thorn
 Save+0x1CF2 STT Fire
 Save+0x1CF3 STT Blizzard
 Save+0x1CF4 STT Thunder
@@ -3833,8 +3650,7 @@ Save+0x1CF6 STT Magnet
 Save+0x1CF7 STT Reflect
 Save+0x1CF8 STT Struggle Weapon
 [Save+0x1CF9,Save+0x1CFA] STT Keyblade
-Save+0x1CFB STT Computer Beam & Twilight Thorn Flag
-Save+0x1CFC Road to Data
+Save+0x1CFC Data Path
 Save+0x1CFD TT Post-Story Save
 Save+0x1CFE STT Post-Story Save
 Save+0x1CFF STT/TT Flag

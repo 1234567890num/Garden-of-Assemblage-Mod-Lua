@@ -7,7 +7,7 @@ LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.12'
+local VersionNum = 'GoA Version 1.52.13'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -352,9 +352,10 @@ if Place == 0x2002 then
 	Spawn('Short',0x0E,0x0B4,0x434) --Dusk -> Goofy
 	if Events(0x01,Null,0x01) then --Station of Serenity Weapons
 		BitNot(Save+0x1CD2,0x80) --TT_SCENARIO_1_START (Show Gameplay Elements)
-		BitOr(Save+0x1CEA,0x02)  --TT_SORA_OLD_END (Play as KH2 Sora)
 		BitOr(Save+0x1CEB,0x08)  --TT_ROXAS_START (Prepare Roxas' Flag)
 		BitOr(Save+0x1CEA,0x01)  --TT_ROXAS_END (Play as Sora)
+		BitOr(Save+0x1CEA,0x02)  --TT_SORA_OLD_END (Play as KH2 Sora)
+		BitOr(Save+0x239E,0x08)  --Show Journal
 		WriteByte(Pause,2) --Disable Pause
 		if ReadInt(CutLen) == 0x246 then --Dusks attack
 			WriteByte(CutSkp,1)
