@@ -1128,17 +1128,11 @@ elseif Place == 0x1212 and Events(Null,Null,0x03) then --The Door to Kingdom Hea
 elseif Place == 0x1B12 then --Final Fight Part I
 	WriteArray(Save+0x1BA6,ReadArray(Save+0x1B22,6)) --Save Memory Skyscraper Spawn ID
 	WriteArray(Save+0x1BAC,ReadArray(Save+0x1B7C,6)) --Save The Altar of Naught Spawn ID
-elseif Place == 0x1412 then --Xemnas II
-	if ReadInt(Slot3) == 1 then --Laser Dome Skip
-		WriteInt(Slot3,0)
-	elseif ReadByte(Pause) == 2 then --Enable Pause
-		WriteByte(Pause,0)
-	end
 elseif Place == 0x0001 and not Events(0x39,0x39,0x39) then --Post Xemnas II Cutscenes
 	if ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
-	if ReadShort(Save+0x1BAC) ~= 0x03 then --Used Promise Charm (didn't see the Opening the Door)
+	if ReadShort(Save+0x1BAC) ~= 0x03 then --Used Promise Charm (didn't see Opening the Door)
 		WriteArray(Save+0x1B22,ReadArray(Save+0x1BA6,6)) --Load Memory Skyscraper Spawn ID
 		WriteArray(Save+0x1B7C,ReadArray(Save+0x1BAC,6)) --Load The Altar of Naught Spawn ID
 	end
@@ -1192,6 +1186,14 @@ if Place == 0x1212 and Events(0x04,0x00,0x04) then
 		WriteShort(CutSkp,0x01) --Skip Door Opening Cutscene if Triggered by Talking to Riku
 	end
 	BitOr(Save+0x1ED4,0x40) --EH_eh_event_134 (Prevent Change when Entering Data Xemnas' Path)
+end
+--Xemnas II Laser Dome Skip
+if Place == 0x1412 then
+	if ReadInt(Slot3) == 1 then --Laser Dome Skip
+		WriteInt(Slot3,0)
+	elseif ReadByte(Pause) == 2 then --Enable Pause
+		WriteByte(Pause,0)
+	end
 end
 --[[Skip Dragon Xemnas
 if Place == 0x1D12 then
@@ -2221,7 +2223,7 @@ elseif Place == 0x0802 then --Prevent Promise Charm Removal (Change Command to B
 	Spawn('Short',0x0F,0x360,0x00)
 end
 --Spawn IDs
-if ReadByte(Save+0x1CFF) == 8 and (Place == 0x1A04 or Place == 0x1402) then
+if ReadByte(Save+0x1CFF) == 8 and Place == 0x1A04 then
 	WriteByte(Save+0x1CFF,0)
 elseif ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and (World == 0x02 or Place == 0x0112) then --Load Spawn ID upon Entering TT
 	WriteInt(Save+0x353C,0x12020100) --Full Party
