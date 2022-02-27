@@ -134,7 +134,7 @@ if ReadInt(ARD,OnPC) ~= 0x01524142 then --Header mismatch
 	return
 elseif Subfile > ReadInt(ARD+4,OnPC) then --Subfile over count
 	return
-elseif Offset >= ReadInt(Subfile+4,OnPC) then --Offset exceed subfile length
+elseif Offset >= ReadInt(Subpoint+4,OnPC) then --Offset exceed subfile length
 	return
 end
 --Get address
