@@ -1,18 +1,18 @@
 --RAM Version
---Last Update: Some code cleanup and bugfixes
+--Last Update: Code Optimization & Very-old Version Deprecation
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with vanilla items.'
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.13'
+local VersionNum = 'GoA Version 1.52.14'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
 	end
 	print(VersionNum)
-	Platform = 0
+	OnPC = false
 	Now = 0x032BAE0 --Current Location
 	Sve = 0x1D5A970 --Saved Location
 	BGM = 0x0347D34 --Background Music
@@ -38,7 +38,8 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	BtlEnd = 0x1D490C0 --Something about end-of-battle camera
 	TxtBox = 0x1D48D54 --Last Displayed Textbox
 	DemCln = 0x1D48DEC --Demyx Clone Status
-	MSNLoad  = 0x04FA440
+	ARDLoad  = 0x034ECF4 --ARD Pointer Address
+	MSNLoad  = 0x04FA440 --Base MSN Address
 	Slot1    = 0x1C6C750 --Unit Slot 1
 	NextSlot = 0x268
 	Point1   = 0x1D48EFC
@@ -49,10 +50,10 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	NextMenu = 0x4
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	if ENGINE_VERSION < 5.0 then
-		ConsolePrint('LuaFrontend is Outdated. Things might not work properly.',2)
+		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
 	end
 	ConsolePrint(VersionNum,0)
-	Platform = 1
+	OnPC = true
 	Now = 0x0714DB8 - 0x56454E
 	Sve = 0x2A09C00 - 0x56450E
 	BGM = 0x0AB8504 - 0x56450E
@@ -77,6 +78,7 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	BtlEnd = 0x2A0D3A0 - 0x56450E
 	TxtBox = 0x074BC70 - 0x56454E
 	DemCln = 0x2A0CF74 - 0x56450E
+	ARDLoad  = 0x2A0CEE8 - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
 	Slot1    = 0x2A20C58 - 0x56450E
 	NextSlot = 0x278
@@ -127,74 +129,40 @@ end
 function Spawn(Type,Subfile,Offset,Value)
 local Subpoint = ARD + 0x08 + 0x10*Subfile
 local Address
-if Platform == 0 and ReadInt(ARD) == 0x01524142 and Subfile <= ReadInt(ARD+4) then
-	--Exclusions on Crash Spots in PCSX2-EX
+--Detect errors
+if ReadInt(ARD,OnPC) ~= 0x01524142 then --Header mismatch
+	return
+elseif Subfile > ReadInt(ARD+4,OnPC) then --Subfile over count
+	return
+elseif Offset >= ReadInt(Subfile+4,OnPC) then --Offset exceed subfile length
+	return
+end
+--Get address
+if not OnPC then
 	Address = ReadInt(Subpoint) + Offset
-	if Type == 'Short' then
-		WriteShort(Address,Value)
-	elseif Type == 'Float' then
-		WriteFloat(Address,Value)
-	elseif Type == 'Int' then
-		WriteInt(Address,Value)
-	elseif Type == 'String' then
-		WriteString(Address,Value)
-	end
-elseif Platform == 1 then
-	local x = ARD&0xFFFFFF000000
-	if ENGINE_VERSION < 5.0 then --LuaBackend
-		if ReadIntA(ARD) == 0x01524142 and Subfile <= ReadIntA(ARD+4) then
-			local y = ReadIntA(Subpoint)&0xFFFFFF
-			Address = x + y + Offset
-			if Type == 'Short' then
-				WriteShortA(Address,Value)
-			elseif Type == 'Float' then
-				WriteFloatA(Address,Value)
-			elseif Type == 'Int' then
-				WriteIntA(Address,Value)
-			elseif Type == 'String' then
-				WriteStringA(Address,Value)
-			end
-		end
-	else --LuaFrontend
-		if ReadInt(ARD,true) == 0x01524142 and Subfile <= ReadInt(ARD+4,true) then
-			local y = ReadInt(Subpoint,true)&0xFFFFFF
-			Address = x + y + Offset
-			if Type == 'Short' then
-				WriteShort(Address,Value,true)
-			elseif Type == 'Float' then
-				WriteFloat(Address,Value,true)
-			elseif Type == 'Int' then
-				WriteInt(Address,Value,true)
-			elseif Type == 'String' then
-				WriteString(Address,Value,true)
-			end
-		end
-	end
+else
+	local x = ARD&0xFFFFFF000000 --Calculations are wrong if done in one step for some reason
+	local y = ReadInt(Subpoint,true)&0xFFFFFF
+	Address = x + y + Offset
+end
+--Change value
+if Type == 'Short' then
+	WriteShort(Address,Value,OnPC)
+elseif Type == 'Float' then
+	WriteFloat(Address,Value,OnPC)
+elseif Type == 'Int' then
+	WriteInt(Address,Value,OnPC)
+elseif Type == 'String' then
+	WriteString(Address,Value,OnPC)
 end
 end
 
 function BitOr(Address,Bit,Abs)
-if Abs and Platform == 1 then
-	if ENGINE_VERSION < 5.0 then
-		WriteByteA(Address,ReadByte(Address)|Bit)
-	else
-		WriteByte(Address,ReadByte(Address)|Bit,true)
-	end
-else
-	WriteByte(Address,ReadByte(Address)|Bit)
-end
+WriteByte(Address,ReadByte(Address)|Bit,Abs and OnPC)
 end
 
 function BitNot(Address,Bit,Abs)
-if Abs and Platform == 1 then
-	if ENGINE_VERSION < 5.0 then
-		WriteByteA(Address,ReadByte(Address)&~Bit)
-	else
-		WriteByte(Address,ReadByte(Address)&~Bit,true)
-	end
-else
-	WriteByte(Address,ReadByte(Address)&~Bit)
-end
+WriteByte(Address,ReadByte(Address)&~Bit,Abs and OnPC)
 end
 
 function DriveRefill(Guaranteed)
@@ -241,14 +209,10 @@ if true then --Define current values for common addresses
 	Evt    = ReadShort(Now+0x08)
 	PrevPlace = ReadShort(Now+0x30)
 	MSN    = MSNLoad + (ReadInt(MSNLoad+4)+1) * 0x10
-	if Platform == 0 then
-		ARD = ReadInt(0x034ECF4) --Base ARD Address
-	elseif Platform == 1 then
-		ARD = ReadLong(0x2A0CEE8 - 0x56450E) --Base ARD Address
-		if GetHertz() < 240 then
-			SetHertz(240)
-			ConsolePrint('Frequency set to 240Hz to accommodate GoA mod.\n',0)
-		end
+	if not OnPC then
+		ARD = ReadInt(ARDLoad) --Base ARD Address
+	else
+		ARD = ReadLong(ARDLoad) --Base ARD Address
 	end
 end
 NewGame()
@@ -340,7 +304,7 @@ if ReadShort(Btl0+0x2EB4C) == 1000 then --MCP Vanilla HP
 	end
 end
 --Change Form's Icons in PC From Analog Stick
-if Platform == 1 and ReadByte(Sys3+0x116DB) == 0x19 then
+if OnPC and ReadByte(Sys3+0x116DB) == 0x19 then
 	WriteByte(Sys3+0x116DB,0x3B) --Valor
 	WriteByte(Sys3+0x116F3,0x3B) --Wisdom
 	WriteByte(Sys3+0x1170B,0x3B) --Limit
@@ -352,9 +316,9 @@ end
 if Place == 0x0102 and Events(0x34,0x34,0x34) then --Opening Cutscene
 	WriteShort(Save+0x03D0,0x01) --Station of Serenity MAP (Dream Weapons)
 	WriteShort(Save+0x03D4,0x01) --Station of Serenity EVT
-	if Platform == 0 then
+	if not OnPC then
 		Warp(0x02,0x20,0x32,0x01,0x00,0x01) --Not warping here on PS2 causes freeze after skipping GoA Activation scene
-	elseif Platform == 1 then
+	else
 		Spawn('Short',0x03,0x300,0x01) --Day 1 Start -> Station of Serenity Weapons
 		Spawn('Short',0x03,0x304,0x20)
 		Spawn('Short',0x03,0x306,0x32)
@@ -547,7 +511,7 @@ if Place == 0x1A04 then
 		Spawn('Short',File,GoASpawn+0x6C,0x0D1) --RC
 	end
 	--Data Portal Texts
-	if Platform == 1 then
+	if OnPC then
 		local XemnasPortalText = false
 		if ReadInt(0x0C65678-0x56450E) == 0xADAD9A2F then
 			XemnasPortalText = 0x0C65678-0x56450E
@@ -633,7 +597,7 @@ if Place == 0x000F then
 	end
 end
 --World Map Text
-if Platform == 1 and ReadInt(0x2AC6891-0x56450E) == 0xA5ABA844 then
+if OnPC and ReadInt(0x2AC6891-0x56450E) == 0xA5ABA844 then
 	local Text = {0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03} --"Garden"
 	WriteArray(0x2AC6891-0x56450E,Text)
 	WriteArray(0x2AC68B0-0x56450E,Text)
@@ -737,17 +701,12 @@ end
 --Fix Genie Crash
 if true then --No Valor, Wisdom, Master, or Final
 	local CurSubmenu
-	if Platform == 0 then
+	if not OnPC then
 		CurSubmenu = ReadInt(Menu2)
-		CurSubmenu = ReadByte(CurSubmenu)
-	elseif Platform == 1 then
+	else
 		CurSubmenu = ReadLong(Menu2)
-		if ENGINE_VERSION < 5.0 then
-			CurSubmenu = ReadByteA(CurSubmenu)
-		else
-			CurSubmenu = ReadByte(CurSubmenu,true)
-		end
 	end
+	CurSubmenu = ReadByte(CurSubmenu,OnPC)
 	if CurSubmenu == 7 and ReadByte(Save+0x36C0)&0x56 == 0x00 then --In Summon menu without Forms
 		BitOr(Save+0x36C0,0x02) --Add Valor Form
 		BitOr(Save+0x06B2,0x01)
@@ -933,9 +892,9 @@ if Place == 0x1212 and Events(0x04,0x00,0x04) then
 		BitNot(Save+0x1D1E,0x80) --In case someone did HB 5
 		Spawn('Short',0x05,0x060,0x000) --Despawn Door RC
 	end
-	if Platform == 0 then
+	if not OnPC then
 		Spawn('Short',0x0E,0x05C,0x3BB) --Riku Text
-	elseif Platform == 1 then
+	else
 		Spawn('Short',0x0E,0x05C,0x710) --Riku Text
 		local RikuText1 = 0x0D3F3BE - 0x56450E
 		local RikuText2 = 0x0D3F33F - 0x56450E
@@ -1161,25 +1120,6 @@ if Place == 0x1A04 and ReadByte(Save+0x1D3E) > 0 then
 		WriteByte(Save+0x1D3E,4)
 	end
 end
---Mrs. Potts Teleport in Lantern Minigame
-if Place == 0x0C05 and Events(Null,0x16,0x02) then
-	if Platform == 0 then --PC Address is Currently Unknown
-		local PottsLocAddress = 0x1ABB7D0
-		if ReadFloat(Gauge1) == 0 then --Cogsworth Out of Stamina
-			if not PottsCoordinate then
-				PottsCoordinate = ReadArray(PottsLocAddress,12)
-			end
-			WriteInt(PottsLocAddress+0,0xC5241753)
-			WriteInt(PottsLocAddress+4,0x00000000)
-			WriteInt(PottsLocAddress+8,0x44CF7FBE)
-		elseif ReadFloat(Gauge1) == 35 and PottsCoordinate then --Stamina Refilled
-			WriteArray(PottsLocAddress,PottsCoordinate)
-			PottsCoordinate = Null
-		end
-	end
-else --Exited Minigame
-	PottsCoordinate = Null
-end
 --Marluxia's Absent Silhouette Removal
 if ReadShort(Save+0x07A4) == 0x01 then
 	WriteShort(Save+0x07A4,0x00) --Beast's Room BTL
@@ -1317,7 +1257,7 @@ if Place == 0x050E and ReadByte(Save+0x1E5E) > 0 then
 	Spawn('Short',0x1C,0x05C,0x6BC) --Text
 	Spawn('Short',0x1C,0x060,0x01E) --RC
 	--Vexen's Portal Text
-	if Platform == 1 then
+	if OnPC then
 		local VexenText = 0x0D40887 - 0x56450E
 		if ReadInt(VexenText) == 0xA89F0136 then
 			WriteByte(0x0D4A0E4-0x56450E,0x00) --Remove 1st Textbox
@@ -1487,7 +1427,7 @@ if Place == 0x0F07 then
 	elseif ReadByte(Save+0x1D7F) == 12 then --Data
 		Spawn('Short',0x09,0x038,0x84)
 		--Lexaeus' Portal Text
-		if Platform == 1 and ReadInt(0x0D3E62E-0x56450E) == 0xAC57AD36 then
+		if OnPC and ReadInt(0x0D3E62E-0x56450E) == 0xAC57AD36 then
 			WriteArray(0x0D3E62E-0x56450E,{0x2F,0x9A,0xAD,0xAD,0xA5,0x9E,0x01,0x39,0x9E,0xB1,0x9A,0x9E,0xAE,0xAC,0x01,0x9A,0xA0,0x9A,0xA2,0xA7,0x50,0x01,0x9B,0xAE,0xAD,0x01,0x9B,0x9E,0x01,0xB0,0x9A,0xAB,0xA7,0x9E,0x9D,0x66,0x66,0x02,0xA1,0x9E,0xEE,0xAC,0x01,0xAC,0xAD,0xAB,0xA8,0xA7,0xA0,0x9E,0xAB,0x01,0xAD,0xA1,0x9A,0xA7,0x01,0x9B,0x9E,0x9F,0xA8,0xAB,0x9E,0x4F,0x02,0x15,0x33,0x00,0x3B,0xA8,0xAD,0x01,0xAB,0xA2,0xA0,0xA1,0xAD,0x01,0xA7,0xA8,0xB0,0x4F,0x02,0x15,0xA1,0x00,0x36,0xEE,0xA6,0x01,0xAB,0x9E,0x9A,0x9D,0xB2,0x01,0x9F,0xA8,0xAB,0x01,0x9A,0x01,0x9F,0xA2,0xA0,0xA1,0xAD,0x48,0x00})
 		end
 	end
@@ -1677,7 +1617,7 @@ if Place == 0x0A06 then
 	if ReadByte(Save+0x1D6F) == 12 then --Zexion's Spawn (Data)
 		Spawn('Short',0x0D,0x1D8,0x86)
 		--Zexion's Portal Text
-		if Platform == 1 and ReadInt(0x0D4192B-0x56450E) == 0xAC57AD36 then
+		if OnPC and ReadInt(0x0D4192B-0x56450E) == 0xAC57AD36 then
 			WriteArray(0x0D4192B-0x56450E,{0x2F,0x9A,0xAD,0xAD,0xA5,0x9E,0x01,0x47,0x9E,0xB1,0xA2,0xA8,0xA7,0x01,0x9A,0xA0,0x9A,0xA2,0xA7,0x50,0x01,0x9B,0xAE,0xAD,0x01,0x9B,0x9E,0x01,0xB0,0x9A,0xAB,0xA7,0x9E,0x9D,0x66,0x66,0x02,0xA1,0x9E,0xEE,0xAC,0x01,0xAC,0xAD,0xAB,0xA8,0xA7,0xA0,0x9E,0xAB,0x01,0xAD,0xA1,0x9A,0xA7,0x01,0x9B,0x9E,0x9F,0xA8,0xAB,0x9E,0x4F,0x02,0x15,0x33,0x00,0x3B,0xA8,0xAD,0x01,0xAB,0xA2,0xA0,0xA1,0xAD,0x01,0xA7,0xA8,0xB0,0x4F,0x02,0x15,0xA1,0x00,0x36,0xEE,0xA6,0x01,0xAB,0x9E,0x9A,0x9D,0xB2,0x01,0x9F,0xA8,0xAB,0x01,0x9A,0x01,0x9F,0xA2,0xA0,0xA1,0xAD,0x48,0x00})
 		end
 	end
@@ -1790,7 +1730,7 @@ if Place == 0x050A and Events(0x39,0x39,0x39) then
 	end
 end--]]
 --Music Change - Scar
-if Place == 0x0E0A and Platform == 0 then
+if Place == 0x0E0A and (not OnPC) then
 	Spawn('Short',0x05,0x00C,0x96) --Squirming Evil
 	Spawn('Short',0x05,0x00E,0x96)
 end
@@ -2626,7 +2566,7 @@ if Place == 0x050C and ReadByte(Save+0x1E1E) > 0 then
 	Spawn('Float',0x0D,0x280,-36)   --Position Z
 	Spawn('Short',0x0D,0x2A0,0x01E) --RC
 	local MarluxiaText, MarluxiaText1, MarluxiaText2
-	if Platform == 1 then
+	if OnPC then
 		MarluxiaText1 = 0x0D3AF90 - 0x56450E
 		MarluxiaText2 = 0x0D3B003 - 0x56450E
 		if ReadByte(Save+0x1E1F) < 4 then --AS
@@ -2658,15 +2598,15 @@ end
 --Marluxia HUD Pop-Up
 if Place == 0x2604 and ReadInt(CutNow) == 0x7A then
 	if Events(0x91,0x91,0x91) then --AS
-		if Platform == 0 and ReadShort(0x1C58FE0) ~= 0x923 then
+		if (not OnPC) and ReadShort(0x1C58FE0) ~= 0x923 then
 			WriteByte(Cntrl,0x00)
-		elseif Platform == 1 and ReadShort(0x29ED484 - 0x56450E) ~= 0x923 then
+		elseif OnPC and ReadShort(0x29ED484 - 0x56450E) ~= 0x923 then
 			WriteByte(Cntrl,0x00)
 		end
 	elseif Events(0x96,0x96,0x96) then --Data
-		if Platform == 0 and ReadShort(0x1C59114) ~= 0x923 then
+		if (not OnPC) and ReadShort(0x1C59114) ~= 0x923 then
 			WriteByte(Cntrl,0x00)
-		elseif Platform == 1 and ReadShort(0x29ED5C4 - 0x56450E) ~= 0x923 then
+		elseif OnPC and ReadShort(0x29ED5C4 - 0x56450E) ~= 0x923 then
 			WriteByte(Cntrl,0x00)
 		end
 	end
@@ -2850,7 +2790,7 @@ elseif Place == 0x0811 then --Central Computer Mesa
 	Spawn('Short',0x0A,0x146,0x20)
 end
 --Space Paranoids Computer Text (Honestly this is a mess)
-if World == 0x11 then
+if World == 0x11 and OnPC then
 	local SPGardenText1 = 0x0E16356 - 0x56450E --Post 2nd Visit
 	local SPGardenText2 = 0x0D36356 - 0x56450E --Before Dataspace Computers
 	local SPTextGarden = {0x34,0x9A,0xAB,0x9D,0x9E,0xA7,0x03,0x03,0x03,0x03,0x03,0x03}
