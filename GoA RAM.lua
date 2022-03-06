@@ -2167,12 +2167,8 @@ if ReadByte(Save+0x1CFF) == 8 and Place == 0x1A04 then
 elseif ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1CFF) == 0 and (World == 0x02 or Place == 0x0112) then --Load Spawn ID upon Entering TT
 	WriteInt(Save+0x353C,0x12020100) --Full Party
 	WriteByte(Save+0x1CFF,8) --TT Flag
-	for i = 0,143 do
-		WriteByte(Save+0x0310+i,ReadByte(Save+0x01A0+i))
-	end
-	WriteShort(Save+0x03E8,ReadShort(Save+0x0310)) --The Empty Realm -> Tunnelway
-	WriteShort(Save+0x03EA,ReadShort(Save+0x0312))
-	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
+	WriteArray(Save+0x0310,ReadArray(Save+0x01A0,144)) --Load Spawn ID
+	WriteArray(Save+0x03E8,ReadArray(Save+0x0310,6))   --The Empty Realm -> Tunnelway
 	local PostSave = ReadByte(Save+0x1CFD)
 	local Progress = ReadByte(Save+0x1D0D)
 	local Visit --Battle Level & Blocks
@@ -2231,20 +2227,12 @@ elseif ReadShort(TxtBox) == 0x768 and PrevPlace == 0x1A04 and ReadByte(Save+0x1C
 	end
 	WriteByte(Save+0x3FF5,Visit)
 	WriteByte(Save+0x23EE,1) --TT Music: The Afternoon Streets & Working Together
-	--Load the Proper Spawn ID
-	local SpawnOffset = 0x310 + Room*6
-	if Evt < 0x20 then --Not a Special Event
-		WriteShort(Now+0x4,ReadShort(Save+SpawnOffset+0x0))
-		WriteShort(Now+0x6,ReadShort(Save+SpawnOffset+0x2))
-		WriteShort(Now+0x8,ReadShort(Save+SpawnOffset+0x4))
+	if Evt <= 50 then --Not a Special Event
+		WriteArray(Now+0x4,ReadArray(Save+0x310+Room*6,6)) --Load the Proper Spawn ID
 	end
 elseif ReadByte(Save+0x1CFF) == 8 then --Save Events within TT
-	WriteShort(Save+0x0310,ReadShort(Save+0x03E8)) --Tunnelway -> The Empty Realm
-	WriteShort(Save+0x0312,ReadShort(Save+0x03EA))
-	WriteShort(Save+0x0314,ReadShort(Save+0x03EC))
-	for i = 0,143 do
-		WriteByte(Save+0x01A0+i,ReadByte(Save+0x0310+i))
-	end
+	WriteArray(Save+0x0310,ReadArray(Save+0x03E8,6))   --Tunnelway -> The Empty Realm
+	WriteArray(Save+0x01A0,ReadArray(Save+0x0310,144)) --Save Spawn ID
 end
 --Save Points -> World Points (1st Visit)
 if ReadByte(Save+0x1CFF) == 8 and false then
@@ -3233,12 +3221,8 @@ elseif ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1C
 	BitNot(Save+0x239E,0x08) --Hide Journal
 	WriteInt(Save+0x353C,0x12121200) --Roxas Only
 	WriteByte(Save+0x1CFF,13) --STT Flag
-	for i = 0,143 do
-		WriteByte(Save+0x0310+i,ReadByte(Save+0x0230+i))
-	end
-	WriteShort(Save+0x03E8,ReadShort(Save+0x0310)) --The Empty Realm -> Tunnelway
-	WriteShort(Save+0x03EA,ReadShort(Save+0x0312))
-	WriteShort(Save+0x03EC,ReadShort(Save+0x0314))
+	WriteArray(Save+0x0310,ReadArray(Save+0x0230,144)) --Load Spawn ID
+	WriteArray(Save+0x03E8,ReadArray(Save+0x0310,6))   --The Empty Realm -> Tunnelway
 	local PostSave = ReadByte(Save+0x1CFE)
 	local Progress = ReadByte(Save+0x1D0E)
 	local Visit --Battle Level & Blocks
@@ -3298,20 +3282,12 @@ elseif ReadShort(TxtBox) == 0x76D and PrevPlace == 0x1A04 and ReadByte(Save+0x1C
 	WriteByte(Save+0x23EE,BGMSet) --STT Music: Lazy Afternoons & Sinister Sundowns
 	WriteShort(Save+0x20E4,0x9F42) --Underground Concourse Block
 	WriteByte(Save+0x1CF0,0) --Beam Flag Reset
-	--Load the Proper Spawn ID
-	local SpawnOffset = 0x310 + Room*6
-	if Evt < 0x20 then --Not a Special Event
-		WriteShort(Now+0x4,ReadShort(Save+SpawnOffset+0x0))
-		WriteShort(Now+0x6,ReadShort(Save+SpawnOffset+0x2))
-		WriteShort(Now+0x8,ReadShort(Save+SpawnOffset+0x4))
+	if Evt <= 50 then --Not a Special Event
+		WriteArray(Now+0x4,ReadArray(Save+0x310+Room*6,6)) --Load the Proper Spawn ID
 	end
 elseif ReadByte(Save+0x1CFF) == 13 then --Save Spawn ID within STT
-	WriteShort(Save+0x0310,ReadShort(Save+0x03E8)) --Tunnelway -> The Empty Realm
-	WriteShort(Save+0x0312,ReadShort(Save+0x03EA))
-	WriteShort(Save+0x0314,ReadShort(Save+0x03EC))
-	for i = 0,143 do
-		WriteByte(Save+0x0230+i,ReadByte(Save+0x0310+i))
-	end
+	WriteArray(Save+0x0310,ReadArray(Save+0x03E8,6))   --Tunnelway -> The Empty Realm
+	WriteArray(Save+0x0230,ReadArray(Save+0x0310,144)) --Save Spawn ID
 end
 --Save Points -> World Points
 if ReadByte(Save+0x1CFF) == 13 then
