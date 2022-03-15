@@ -185,7 +185,7 @@ function RemoveTTBlocks() --Remove All TT & STT Blocks
 WriteShort(Save+0x207C,0) --Sunset Station
 WriteShort(Save+0x2080,0) --Central Station
 WriteShort(Save+0x20E4,0) --Underground Concourse
-WriteShort(Save+0x20E8,0) --Woods
+WriteShort(Save+0x20E8,0) --The Woods
 WriteShort(Save+0x20EC,0) --Sandlot
 WriteShort(Save+0x20F0,0) --Tram Commons
 WriteShort(Save+0x20F4,0) --The Mysterious Tower
