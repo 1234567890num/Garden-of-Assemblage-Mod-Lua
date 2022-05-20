@@ -760,6 +760,12 @@ if true then --No Valor, Wisdom, Master, or Final
 		BitNot(Save+0x06B2,0x01)
 	end
 end
+--Invincibility on Cutscenes
+if ReadByte(Slot1+0x1AE) == 0 and ReadByte(Cntrl) == 0 then --Gameplay
+	WriteByte(Slot1+0x1AE,100)
+elseif ReadByte(Cntrl) == 3 then --Cutscene
+	WriteByte(Slot1+0x1AE,0)
+end
 --Progressive Growth Abilities & Fixed Trinity Limit Slot
 for Slot = 0,68 do
 	local Current = Save + 0x2544 + 2*Slot
