@@ -3030,58 +3030,31 @@ if ReadByte(Save+0x1CFF) == 13 then
 end
 --Simulated Twilight Town Adjustments
 if ReadByte(Save+0x1CFF) == 13 then --STT Removals
-	if ReadShort(Save+0x25D2)&0x8000 == 0x8000 then --Dodge Roll
-		BitNot(Save+0x25D3,0x80)
-		BitOr(Save+0x1CF1,0x01)
+	if ReadByte(Sys3+0x035E1) == 0xB7 then --Better STT disabled (value is 0x93 when enabled, address is Twilight Thorn RC flag)
+		if ReadShort(Save+0x25D2)&0x8000 == 0x8000 then --Dodge Roll
+			BitNot(Save+0x25D3,0x80)
+			BitOr(Save+0x1CF1,0x01)
+		end
+		WriteShort(Sys3+0x009C6,0x00) --Fire
+		WriteShort(Sys3+0x009F6,0x00) --Thunder
+		WriteShort(Sys3+0x00A26,0x00) --Blizzard
+		WriteShort(Sys3+0x00A56,0x00) --Cure
+		WriteShort(Sys3+0x015C6,0x00) --Fira
+		WriteShort(Sys3+0x015F6,0x00) --Firaga
+		WriteShort(Sys3+0x01626,0x00) --Blizzara
+		WriteShort(Sys3+0x01656,0x00) --Blizzaga
+		WriteShort(Sys3+0x01686,0x00) --Thundara
+		WriteShort(Sys3+0x016B6,0x00) --Thundaga
+		WriteShort(Sys3+0x016E6,0x00) --Cura
+		WriteShort(Sys3+0x01716,0x00) --Curaga
+		WriteShort(Sys3+0x01F26,0x00) --Magnet
+		WriteShort(Sys3+0x01F56,0x00) --Magnera
+		WriteShort(Sys3+0x01F86,0x00) --Magnega
+		WriteShort(Sys3+0x01FB6,0x00) --Reflect
+		WriteShort(Sys3+0x01FE6,0x00) --Reflera
+		WriteShort(Sys3+0x02016,0x00) --Reflega
+		WriteShort(Sys3+0x07026,0x00) --Trinity (Solo)
 	end
-	--[[Old Magic Removal
-	if ReadShort(Save+0x25D8)&0x8000 == 0x8000 then --Trinity Limit
-		BitNot(Save+0x25D9,0x80)
-		BitOr(Save+0x1CF1,0x02)
-	end
-	while ReadByte(Save+0x3594) > 0 do --Fire
-		WriteByte(Save+0x1CF2,ReadByte(Save+0x1CF2)+1)
-		WriteByte(Save+0x3594,ReadByte(Save+0x3594)-1)
-	end
-	while ReadByte(Save+0x3595) > 0 do --Blizzard
-		WriteByte(Save+0x1CF3,ReadByte(Save+0x1CF3)+1)
-		WriteByte(Save+0x3595,ReadByte(Save+0x3595)-1)
-	end
-	while ReadByte(Save+0x3596) > 0 do --Thunder
-		WriteByte(Save+0x1CF4,ReadByte(Save+0x1CF4)+1)
-		WriteByte(Save+0x3596,ReadByte(Save+0x3596)-1)
-	end
-	while ReadByte(Save+0x3597) > 0 do --Cure
-		WriteByte(Save+0x1CF5,ReadByte(Save+0x1CF5)+1)
-		WriteByte(Save+0x3597,ReadByte(Save+0x3597)-1)
-	end
-	while ReadByte(Save+0x35CF) > 0 do --Magnet
-		WriteByte(Save+0x1CF6,ReadByte(Save+0x1CF6)+1)
-		WriteByte(Save+0x35CF,ReadByte(Save+0x35CF)-1)
-	end
-	while ReadByte(Save+0x35D0) > 0 do --Reflect
-		WriteByte(Save+0x1CF7,ReadByte(Save+0x1CF7)+1)
-		WriteByte(Save+0x35D0,ReadByte(Save+0x35D0)-1)
-	end--]]
-	WriteShort(Sys3+0x009C6,0x00) --Fire
-	WriteShort(Sys3+0x009F6,0x00) --Thunder
-	WriteShort(Sys3+0x00A26,0x00) --Blizzard
-	WriteShort(Sys3+0x00A56,0x00) --Cure
-	WriteShort(Sys3+0x015C6,0x00) --Fira
-	WriteShort(Sys3+0x015F6,0x00) --Firaga
-	WriteShort(Sys3+0x01626,0x00) --Blizzara
-	WriteShort(Sys3+0x01656,0x00) --Blizzaga
-	WriteShort(Sys3+0x01686,0x00) --Thundara
-	WriteShort(Sys3+0x016B6,0x00) --Thundaga
-	WriteShort(Sys3+0x016E6,0x00) --Cura
-	WriteShort(Sys3+0x01716,0x00) --Curaga
-	WriteShort(Sys3+0x01F26,0x00) --Magnet
-	WriteShort(Sys3+0x01F56,0x00) --Magnera
-	WriteShort(Sys3+0x01F86,0x00) --Magnega
-	WriteShort(Sys3+0x01FB6,0x00) --Reflect
-	WriteShort(Sys3+0x01FE6,0x00) --Reflera
-	WriteShort(Sys3+0x02016,0x00) --Reflega
-	WriteShort(Sys3+0x07026,0x00) --Trinity (Solo)
 	local Equip = ReadShort(Save+0x24F0) --Currently equipped Keyblade
 	local Store = ReadShort(Save+0x1CF9) --Last equipped Keyblade
 	local Struggle
@@ -3130,35 +3103,6 @@ else --Restore Outside STT
 		BitOr(Save+0x25D3,0x80)
 		BitNot(Save+0x1CF1,0x01)
 	end
-	--[[Old Magic Restoration
-	if ReadByte(Save+0x1CF1)&0x02 == 0x02 then --Trinity Limit
-		BitOr(Save+0x25D9,0x80)
-		BitNot(Save+0x1CF1,0x02)
-	end
-	while ReadByte(Save+0x1CF2) > 0 do --Fire
-		WriteByte(Save+0x1CF2,ReadByte(Save+0x1CF2)-1)
-		WriteByte(Save+0x3594,ReadByte(Save+0x3594)+1)
-	end
-	while ReadByte(Save+0x1CF3) > 0 do --Blizzard
-		WriteByte(Save+0x1CF3,ReadByte(Save+0x1CF3)-1)
-		WriteByte(Save+0x3595,ReadByte(Save+0x3595)+1)
-	end
-	while ReadByte(Save+0x1CF4) > 0 do --Thunder
-		WriteByte(Save+0x1CF4,ReadByte(Save+0x1CF4)-1)
-		WriteByte(Save+0x3596,ReadByte(Save+0x3596)+1)
-	end
-	while ReadByte(Save+0x1CF5) > 0 do --Cure
-		WriteByte(Save+0x1CF5,ReadByte(Save+0x1CF5)-1)
-		WriteByte(Save+0x3597,ReadByte(Save+0x3597)+1)
-	end
-	while ReadByte(Save+0x1CF6) > 0 do --Magnet
-		WriteByte(Save+0x1CF6,ReadByte(Save+0x1CF6)-1)
-		WriteByte(Save+0x35CF,ReadByte(Save+0x35CF)+1)
-	end
-	while ReadByte(Save+0x1CF7) > 0 do --Reflect
-		WriteByte(Save+0x1CF7,ReadByte(Save+0x1CF7)-1)
-		WriteByte(Save+0x35D0,ReadByte(Save+0x35D0)+1)
-	end--]]
 	WriteShort(Sys3+0x009C6,0x02) --Fire
 	WriteShort(Sys3+0x009F6,0x02) --Thunder
 	WriteShort(Sys3+0x00A26,0x02) --Blizzard
