@@ -2053,7 +2053,7 @@ elseif Place == 0x1C02 and Events(0x97,0x97,0x97) then --The Evil Fairy's Reviva
 	WriteShort(Save+0x03CC,0x01) --Tower: Wayward Stairs (Lower Level) BTL
 	WriteShort(Save+0x03F6,0x01) --Tower: Wayward Stairs (Middle Level) BTL
 	WriteShort(Save+0x03FC,0x01) --Tower: Wayward Stairs (Upper Level) BTL
-elseif ReadByte(Save+0x1D0D) == 6 and ReadByte(Save+0x3640) > 0 then --2nd Visit
+elseif ReadByte(Save+0x1D0D) == 6 and ReadByte(Save+0x3649) > 0 then --2nd Visit
 	WriteByte(Save+0x1D0D,7)
 elseif Place == 0x0702 and Events(0x6B,0x6B,0x6B) then --A Frantic Vivi
 	WriteByte(Save+0x1D0D,8)
@@ -2340,7 +2340,7 @@ elseif Place == 0x0D04 and Events(Null,Null,0x01) then --The Hollow Bastion Rest
 	WriteByte(Save+0x1D2F,1)
 elseif Place == 0x0D04 and Events(Null,Null,0x08) then --Lost Memories
 	WriteByte(Save+0x1D2F,2)
-elseif ReadByte(Save+0x1D2F) == 2 and ReadByte(Save+0x3649) > 0 then --4th Visit
+elseif ReadByte(Save+0x1D2F) == 2 and ReadByte(Save+0x3643) > 0 then --4th Visit
 	WriteByte(Save+0x1D2F,3)
 	WriteShort(Save+0x064C,0x02) --Marketplace MAP (Despawn Room Transition)
 	WriteShort(Save+0x0650,0x02) --Marketplace EVT
@@ -2476,7 +2476,7 @@ if ReadShort(Save+0x065E) == 0x00 or ReadShort(Save+0x065E) == 0x04 then
 end
 --Ansem's Study Rearrangement
 if Place == 0x0504 then
-	if ReadByte(Save+0x3643) > 0 then --Heartless Manufactory Early Access (Membership Card)
+	if ReadByte(Save+0x365F) > 0 then --Heartless Manufactory Early Access (Unknown Disk/DUMMY 15)
 		WriteShort(Save+0x20D4,0) --Heartless Manufactory Unblock
 		Spawn('Int',0x01,0x5B0,0xC1C8F) --MAP 0x0D
 		Spawn('String',0x01,0x5FC,'m_11')
