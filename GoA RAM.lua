@@ -358,18 +358,6 @@ if Place == 0x2002 then
 			WriteByte(CutSkp,1)
 		end
 		--Starting Stats
-		WriteByte(Save+0x35AE,1) --Have 1 Battlefields of War
-		WriteByte(Save+0x35AF,1) --Have 1 Sword of the Ancestors
-		WriteByte(Save+0x35B3,1) --Have 1 Beast's Claw
-		WriteByte(Save+0x35B4,1) --Have 1 Bone Fist
-		WriteByte(Save+0x35B5,1) --Have 1 Proud Fang
-		WriteByte(Save+0x35B6,1) --Have 1 Skill and Crossbones
-		WriteByte(Save+0x35C0,1) --Have 1 Scimitar
-		--WriteByte(Save+0x35C1,1) --Have 1 Way to the Dawn
-		WriteByte(Save+0x35C2,1) --Have 1 Identity Disk
-		WriteByte(Save+0x3640,1) --Have 1 Poster
-		WriteByte(Save+0x364A,1) --Have 1 Picture
-		WriteByte(Save+0x3649,1) --Have 1 Ice Cream
 		WriteByte(Slot1+0x1B0,100) --Starting Drive %
 		WriteByte(Slot1+0x1B1,5)   --Starting Drive Current
 		WriteByte(Slot1+0x1B2,5)   --Starting Drive Max
