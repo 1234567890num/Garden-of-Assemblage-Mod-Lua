@@ -2045,7 +2045,7 @@ elseif Place == 0x1C02 and Events(0x97,0x97,0x97) then --The Evil Fairy's Reviva
 	WriteShort(Save+0x03CC,0x01) --Tower: Wayward Stairs (Lower Level) BTL
 	WriteShort(Save+0x03F6,0x01) --Tower: Wayward Stairs (Middle Level) BTL
 	WriteShort(Save+0x03FC,0x01) --Tower: Wayward Stairs (Upper Level) BTL
-elseif ReadByte(Save+0x1D0D) == 6 and ReadByte(Save+0x3649) > 0 then --2nd Visit
+elseif ReadByte(Save+0x1D0D) == 6 and ReadByte(Save+0x364A) > 0 then --2nd Visit
 	WriteByte(Save+0x1D0D,7)
 elseif Place == 0x0702 and Events(0x6B,0x6B,0x6B) then --A Frantic Vivi
 	WriteByte(Save+0x1D0D,8)
@@ -2060,7 +2060,7 @@ elseif Place == 0x0402 and Events(Null,Null,0x01) then --Leave It to Us!
 	WriteByte(Save+0x1D0D,9)
 elseif Place == 0x0012 and Events(0x75,0x75,0x75) then --Saix's Report
 	WriteByte(Save+0x1D0D,10)
-elseif ReadByte(Save+0x1D0D) == 10 and ReadByte(Save+0x364A) > 0 then --3rd Visit
+elseif ReadByte(Save+0x1D0D) == 10 and ReadByte(Save+0x3649) > 0 then --3rd Visit
 	WriteByte(Save+0x1D0D,11)
 elseif Place == 0x0902 and Events(0x77,0x77,0x77) then --The Photograph
 	WriteByte(Save+0x1D0D,12)
