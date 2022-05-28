@@ -3325,7 +3325,7 @@ if ReadByte(Save+0x1CFF) == 13 then --STT Removals
 		WriteShort(Sys3+0x01FB6,0x00) --Reflect
 		WriteShort(Sys3+0x01FE6,0x00) --Reflera
 		WriteShort(Sys3+0x02016,0x00) --Reflega
-		WriteShort(Sys3+0x07026,0x00) --Trinity (Solo)
+		WriteShort(Sys3+0x07056,0x00) --Trinity (Solo)
 	end
 	local Equip = ReadShort(Save+0x24F0) --Currently equipped Keyblade
 	local Store = ReadShort(Save+0x1CF9) --Last equipped Keyblade
@@ -3393,7 +3393,7 @@ else --Restore Outside STT
 	WriteShort(Sys3+0x01FB6,0x02) --Reflect
 	WriteShort(Sys3+0x01FE6,0x02) --Reflera
 	WriteShort(Sys3+0x02016,0x02) --Reflega
-	WriteShort(Sys3+0x07026,0x51) --Trinity (Solo)
+	WriteShort(Sys3+0x07056,0x51) --Trinity (Solo)
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
 end
 --Faster Twilight Thorn Reaction Commands
