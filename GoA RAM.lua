@@ -361,6 +361,7 @@ if Place == 0x2002 then
 		WriteByte(Slot1+0x1B0,100) --Starting Drive %
 		WriteByte(Slot1+0x1B1,5)   --Starting Drive Current
 		WriteByte(Slot1+0x1B2,5)   --Starting Drive Max
+		BitNot(Save+0x41A5,0x06)   --Default No Summon Animations
 		--Place Scripts
 		WriteShort(Save+0x03D0,0x00) --Station of Serenity MAP (Chest, Save, Door)
 		WriteShort(Save+0x03D4,0x00) --Station of Serenity EVT

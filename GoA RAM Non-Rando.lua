@@ -1,5 +1,5 @@
 --RAM Version
---Last Update: Growth Abilities code removal, QoL embedded
+--Last Update: QoL embedded, give party weapons at the start
 --Todo: Determine what to do with vanilla form growth
 
 LUAGUI_NAME = 'GoA RAM Non-Randomizer Build'
@@ -352,6 +352,15 @@ if Place == 0x2002 then
 		WriteByte(Slot1+0x1B0,100) --Starting Drive %
 		WriteByte(Slot1+0x1B1,5)   --Starting Drive Current
 		WriteByte(Slot1+0x1B2,5)   --Starting Drive Max
+		BitNot(Save+0x41A5,0x06)   --Default No Summon Animations
+		WriteByte(Save+0x35AE,1) --Have 1 Battlefields of War
+		WriteByte(Save+0x35AF,1) --Have 1 Sword of the Ancestors
+		WriteByte(Save+0x35B3,1) --Have 1 Beast's Claw
+		WriteByte(Save+0x35B4,1) --Have 1 Bone Fist
+		WriteByte(Save+0x35B5,1) --Have 1 Proud Fang
+		WriteByte(Save+0x35B6,1) --Have 1 Skill and Crossbones
+		WriteByte(Save+0x35C0,1) --Have 1 Scimitar
+		WriteByte(Save+0x35C2,1) --Have 1 Identity Disk
 		--Place Scripts
 		WriteShort(Save+0x03D0,0x00) --Station of Serenity MAP (Chest, Save, Door)
 		WriteShort(Save+0x03D4,0x00) --Station of Serenity EVT
@@ -2099,14 +2108,6 @@ elseif Place == 0x0104 and Events(Null,Null,0x01) then --Xemnas's Agenda
 	BitNot(Save+0x1D15,0x08) --HB_418_END (Change Spawn ID in Next Cutscene Properly)
 elseif Place == 0x0104 and Events(0x5C,0x5C,0x5C) then --A Box of Memories
 	WriteByte(Save+0x1D2F,10)
-	WriteByte(Save+0x35AE,1) --Have 1 Battlefields of War
-	WriteByte(Save+0x35AF,1) --Have 1 Sword of the Ancestors
-	WriteByte(Save+0x35B3,1) --Have 1 Beast's Claw
-	WriteByte(Save+0x35B4,1) --Have 1 Bone Fist
-	WriteByte(Save+0x35B5,1) --Have 1 Proud Fang
-	WriteByte(Save+0x35B6,1) --Have 1 Skill and Crossbones
-	WriteByte(Save+0x35C0,1) --Have 1 Scimitar
-	WriteByte(Save+0x35C2,1) --Have 1 Identity Disk
 elseif ReadByte(Save+0x1D2F) == 10 and true then --5th Visit
 	WriteByte(Save+0x1D2F,11)
 	WriteShort(Save+0x0650,0x0A) --Marketplace EVT
