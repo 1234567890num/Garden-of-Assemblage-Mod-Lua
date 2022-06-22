@@ -7,7 +7,7 @@ LUAGUI_AUTH = "SonicShadowSilver2 (Ported by Num)"
 LUAGUI_DESC = "A GoA build to let you practice various events."
 
 function _OnInit()
-local VersionNum = 'GoA Version 1.52.14'
+local VersionNum = 'GoA Version 1.53.2'
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
 	if ENGINE_VERSION < 3.0 then
 		print('LuaEngine is Outdated. Things might not work properly.')
@@ -41,17 +41,14 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	DemCln = 0x1D48DEC --Demyx Clone Status
 	ARDLoad  = 0x034ECF4 --ARD Pointer Address
 	MSNLoad  = 0x04FA440 --Base MSN Address
-	Slot1    = 0x1C6C750 --Unit Slot 1
-	NextSlot = 0x268
-	Point1   = 0x1D48EFC
-	NxtPoint = 0x38
-	Gauge1   = 0x1D48FA4
-	NxtGauge = 0x34
-	Menu1    = 0x1C5FF18 --Menu 1 (main command menu)
-	NextMenu = 0x4
-	print('Cycle through growth abilities by pressing Square with cursor in their respective form')
-	print('Add all boosts by pressing Hyena combination (L2+R2+Triangle) with cursor in Attack on 1st page')
-	print("The computer does nothing. You'll figure out how to get to CoR.")
+	Slot      = {[1]=0x1C6C750} --Unit Slot
+	NextSlot  = 0x268
+	Point     = {[1]=0x1D48EFC} --Counter
+	NextPoint = 0x38
+	Gauge     = {[1]=0x1D48FA4} --Gauge
+	NextGauge = 0x34
+	Menu      = {[1]=0x1C5FF18} --Command menu
+	NextMenu  = 0x4
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	if ENGINE_VERSION < 5.0 then
 		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
@@ -84,36 +81,23 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	DemCln = 0x2A0CF74 - 0x56450E
 	ARDLoad  = 0x2A0CEE8 - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
-	Slot1    = 0x2A20C58 - 0x56450E
-	NextSlot = 0x278
-	Point1   = 0x2A0D108 - 0x56450E
-	NxtPoint = 0x50
-	Gauge1   = 0x2A0D1F8 - 0x56450E
-	NxtGauge = 0x48
-	Menu1    = 0x2A0E7D0 - 0x56450E
-	NextMenu = 0x8
-	ConsolePrint('Cycle through growth abilities by pressing Square with cursor in their respective form')
-	ConsolePrint('Add all boosts by pressing Hyena combination (L2+R2+Triangle) with cursor in Attack on 1st page')
-	ConsolePrint("The computer does nothing. You'll figure out how to get to CoR.")
+	Slot      = {[1]=0x2A20C58 - 0x56450E}
+	NextSlot  = 0x278
+	Point     = {[1]=0x2A0D108 - 0x56450E}
+	NextPoint = 0x50
+	Gauge     = {[1]=0x2A0D1F8 - 0x56450E}
+	NextGauge = 0x48
+	Menu      = {[1]=0x2A0E7D0 - 0x56450E}
+	NextMenu  = 0x8
 end
-Slot2  = Slot1 - NextSlot
-Slot3  = Slot2 - NextSlot
-Slot4  = Slot3 - NextSlot
-Slot5  = Slot4 - NextSlot
-Slot6  = Slot5 - NextSlot
-Slot7  = Slot6 - NextSlot
-Slot8  = Slot7 - NextSlot
-Slot9  = Slot8 - NextSlot
-Slot10 = Slot9 - NextSlot
-Slot11 = Slot10 - NextSlot
-Slot12 = Slot11 - NextSlot
-Point2 = Point1 + NxtPoint
-Point3 = Point2 + NxtPoint
-Gauge2 = Gauge1 + NxtGauge
-Gauge3 = Gauge2 + NxtGauge
-Menu2  = Menu1 + NextMenu
-Menu3  = Menu2 + NextMenu
-pi     = math.pi
+for i = 1,13 do
+	Slot[i+1] = Slot[i] - NextSlot
+	if i <= 2 then
+		Point[i+1] = Point[i] + NextPoint
+		Gauge[i+1] = Gauge[i] + NextGauge
+		Menu [i+1] = Menu [i] + NextMenu
+	end
+end
 end
 
 function Warp(W,R,D,M,B,E) --Warp into the appropriate World, Room, Door, Map, Btl, Evt
@@ -2215,10 +2199,10 @@ if Place == 0x1A04 then
 	WriteByte(Save+0x3584,69) --Mega-Potion
 	WriteByte(Save+0x3585,69) --Mega-Ether
 	WriteByte(Save+0x3586,69) --Megalixir
-	WriteByte(Slot1+0x1B0,100) --Drive
-	WriteByte(Slot1+0x1B1,ReadByte(Slot1+0x1B2))
-	WriteByte(Slot1+0x000,ReadByte(Slot1+0x004)) --Sora HP
-	WriteByte(Slot1+0x180,ReadByte(Slot1+0x184)) --Sora MP
+	WriteByte(Slot[1]+0x1B0,100) --Drive
+	WriteByte(Slot[1]+0x1B1,ReadByte(Slot[1]+0x1B2))
+	WriteByte(Slot[1]+0x000,ReadByte(Slot[1]+0x004)) --Sora HP
+	WriteByte(Slot[1]+0x180,ReadByte(Slot[1]+0x184)) --Sora MP
 	WriteByte(Save+0x24F9,ReadByte(Save+0x3666)) --Sora Strength
 	WriteByte(Save+0x24FA,ReadByte(Save+0x3667)) --Sora Magic
 	WriteByte(Save+0x24FB,ReadByte(Save+0x3668)) --Sora Defense
@@ -2247,11 +2231,11 @@ if Place == 0x1A04 then
 				WriteByte(Save+0x3668,99) --Defense Boost
 				WriteByte(Save+0x3669,99)  --AP Boost
 			elseif Cursor == 1 then --Magic -> MP
-				Increment(Slot1+0x184,5,100,140)
+				Increment(Slot[1]+0x184,5,100,140)
 			elseif Cursor == 2 then --Item -> HP
-				Increment(Slot1+0x004,2,20,120)
+				Increment(Slot[1]+0x004,2,20,120)
 			elseif Cursor == 3 then --Drive -> Drive
-				Increment(Slot1+0x1B2,1,3,9)
+				Increment(Slot[1]+0x1B2,1,3,9)
 			end
 		elseif CurMenu2 == 1 then --Magic
 			if not OnPC then
