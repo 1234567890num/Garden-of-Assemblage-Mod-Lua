@@ -810,12 +810,12 @@ if true then
 end
 --Munny Pouch (Olette)
 while ReadByte(Save+0x363C) > ReadByte(Save+0x35C4) do
-	WriteShort(Save+0x2440,ReadShort(Save+0x2440)+5000)
+	WriteInt(Save+0x2440,ReadInt(Save+0x2440)+5000)
 	WriteByte(Save+0x35C4,ReadByte(Save+0x35C4)+1)
 end
 --Munny Pouch (Mickey)
 while ReadByte(Save+0x3695) > ReadByte(Save+0x35C5) do
-	WriteShort(Save+0x2440,ReadShort(Save+0x2440)+5000)
+	WriteInt(Save+0x2440,ReadInt(Save+0x2440)+5000)
 	WriteByte(Save+0x35C5,ReadByte(Save+0x35C5)+1)
 end
 --DUMMY 23 = Maximum HP Increased!
