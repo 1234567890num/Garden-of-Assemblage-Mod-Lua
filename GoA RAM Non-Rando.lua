@@ -41,14 +41,14 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	DemCln = 0x1D48DEC --Demyx Clone Status
 	ARDLoad  = 0x034ECF4 --ARD Pointer Address
 	MSNLoad  = 0x04FA440 --Base MSN Address
-	Slot      = {[1]=0x1C6C750} --Unit Slot
-	NextSlot  = 0x268
-	Point     = {[1]=0x1D48EFC} --Counter
-	NextPoint = 0x38
-	Gauge     = {[1]=0x1D48FA4} --Gauge
-	NextGauge = 0x34
-	Menu      = {[1]=0x1C5FF18} --Command menu
-	NextMenu  = 0x4
+	Slot1    = 0x1C6C750 --Unit Slot 1
+	NextSlot = 0x268
+	Point1   = 0x1D48EFC
+	NxtPoint = 0x38
+	Gauge1   = 0x1D48FA4
+	NxtGauge = 0x34
+	Menu1    = 0x1C5FF18 --Menu 1 (main command menu)
+	NextMenu = 0x4
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	if ENGINE_VERSION < 5.0 then
 		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
@@ -81,23 +81,33 @@ elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	DemCln = 0x2A0CF74 - 0x56450E
 	ARDLoad  = 0x2A0CEE8 - 0x56450E
 	MSNLoad  = 0x0BF08C0 - 0x56450E
-	Slot      = {[1]=0x2A20C58 - 0x56450E}
-	NextSlot  = 0x278
-	Point     = {[1]=0x2A0D108 - 0x56450E}
-	NextPoint = 0x50
-	Gauge     = {[1]=0x2A0D1F8 - 0x56450E}
-	NextGauge = 0x48
-	Menu      = {[1]=0x2A0E7D0 - 0x56450E}
-	NextMenu  = 0x8
+	Slot1    = 0x2A20C58 - 0x56450E
+	NextSlot = 0x278
+	Point1   = 0x2A0D108 - 0x56450E
+	NxtPoint = 0x50
+	Gauge1   = 0x2A0D1F8 - 0x56450E
+	NxtGauge = 0x48
+	Menu1    = 0x2A0E7D0 - 0x56450E
+	NextMenu = 0x8
 end
-for i = 1,13 do
-	Slot[i+1] = Slot[i] - NextSlot
-	if i <= 2 then
-		Point[i+1] = Point[i] + NextPoint
-		Gauge[i+1] = Gauge[i] + NextGauge
-		Menu [i+1] = Menu [i] + NextMenu
-	end
-end
+Slot2  = Slot1 - NextSlot
+Slot3  = Slot2 - NextSlot
+Slot4  = Slot3 - NextSlot
+Slot5  = Slot4 - NextSlot
+Slot6  = Slot5 - NextSlot
+Slot7  = Slot6 - NextSlot
+Slot8  = Slot7 - NextSlot
+Slot9  = Slot8 - NextSlot
+Slot10 = Slot9 - NextSlot
+Slot11 = Slot10 - NextSlot
+Slot12 = Slot11 - NextSlot
+Point2 = Point1 + NxtPoint
+Point3 = Point2 + NxtPoint
+Gauge2 = Gauge1 + NxtGauge
+Gauge3 = Gauge2 + NxtGauge
+Menu2  = Menu1 + NextMenu
+Menu3  = Menu2 + NextMenu
+pi     = math.pi
 end
 
 function Warp(W,R,D,M,B,E) --Warp into the appropriate World, Room, Door, Map, Btl, Evt
@@ -339,9 +349,9 @@ if Place == 0x2002 then
 			WriteByte(CutSkp,1)
 		end
 		--Starting Stats
-		WriteByte(Slot[1]+0x1B0,100) --Starting Drive %
-		WriteByte(Slot[1]+0x1B1,5)   --Starting Drive Current
-		WriteByte(Slot[1]+0x1B2,5)   --Starting Drive Max
+		WriteByte(Slot1+0x1B0,100) --Starting Drive %
+		WriteByte(Slot1+0x1B1,5)   --Starting Drive Current
+		WriteByte(Slot1+0x1B2,5)   --Starting Drive Max
 		BitNot(Save+0x41A5,0x06)   --Default No Summon Animations
 		WriteByte(Save+0x35AE,1) --Have 1 Battlefields of War
 		WriteByte(Save+0x35AF,1) --Have 1 Sword of the Ancestors
@@ -752,7 +762,7 @@ if ReadByte(Save+0x3524) == 6 then --In Anti Form
 	BitOr(Save+0x36C0,0x20) --Unlocks Anti Form
 end--]]
 --[[Anti Form Costs Max Drive Instead of a Static 9.
-WriteByte(Sys3+0x00500,ReadByte(Slot[1]+0x1B2))--]]
+WriteByte(Sys3+0x00500,ReadByte(Slot1+0x1B2))--]]
 end
 
 function TWtNW()
@@ -877,8 +887,8 @@ if Place == 0x1212 and Events(0x04,0x00,0x04) then
 end
 --Xemnas II Laser Dome Skip
 if Place == 0x1412 then
-	if ReadInt(Slot[3]) == 1 then --Laser Dome Skip
-		WriteInt(Slot[3],0)
+	if ReadInt(Slot3) == 1 then --Laser Dome Skip
+		WriteInt(Slot3,0)
 	elseif ReadByte(Pause) == 2 then --Enable Pause
 		WriteByte(Pause,0)
 	end
@@ -1200,9 +1210,9 @@ if ReadByte(Save+0x1E5E) > 0 then
 end
 --Fast Oogie
 if Place == 0x090E and Events(0x37,0x37,0x37) then
-	WriteInt(Slot[2]+8,0)
-	WriteInt(Slot[3]+8,0)
-	WriteInt(Slot[4]+8,0)
+	WriteInt(Slot2+8,0)
+	WriteInt(Slot3+8,0)
+	WriteInt(Slot4+8,0)
 end
 --Fast Gift Wrapping
 if Place == 0x0A0E and Events(0x3F,0x3F,0x3F) then
@@ -1981,7 +1991,7 @@ if ReadByte(Save+0x1CFF) == 8 and false then
 	end
 end
 --Station Plaza Nobodies with Trinity Limit End Softlock Fix
-if Place == 0x0802 and Events(0x6C,0x6C,0x6C) and ReadInt(Point[1]) == 98 then --Hit Counter Almost Reached
+if Place == 0x0802 and Events(0x6C,0x6C,0x6C) and ReadInt(Point1) == 98 then --Hit Counter Almost Reached
 	WriteInt(CutLen,1) --End Trinity Limit Early
 end
 --Lexaeus Absent Silhouette Removal
