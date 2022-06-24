@@ -740,23 +740,6 @@ while ReadByte(Save+0x3695) > ReadByte(Save+0x35C5) do
 	WriteInt(Save+0x2440,ReadInt(Save+0x2440)+5000)
 	WriteByte(Save+0x35C5,ReadByte(Save+0x35C5)+1)
 end
---Alternate Party Models (adding new UCM using MEMT causes problems when shopping)
-if World == 0x0C and Place ~= 0x070C then --Mage & Knight (KH I)
-	WriteString(Obj0+0x16F0,'P_EX020_DC\0')
-	WriteString(Obj0+0x1750,'P_EX030_DC\0')
-	WriteString(Obj0+0x3250,'P_EX020_DC_ANGRY_NPC\0')
-	WriteString(Obj0+0x40F0,'H_ZZ020_DC\0')
-	WriteString(Obj0+0x4150,'H_ZZ030_DC\0')
-elseif Place == 0x2004 or Place == 0x2104 or Place == 0x2204 or Place == 0x2604 then --Casual (CoM)
-	WriteString(Obj0+0x16F0,'P_EX020_CO\0')
-	WriteString(Obj0+0x1750,'P_EX030_CO\0')
-else --Revert costume changes
-	WriteString(Obj0+0x16F0,'P_EX020\0')
-	WriteString(Obj0+0x1750,'P_EX030\0')
-	WriteString(Obj0+0x3250,'P_EX020_ANGRY_NPC\0')
-	WriteString(Obj0+0x40F0,'H_ZZ020\0')
-	WriteString(Obj0+0x4150,'H_ZZ030\0')
-end
 --[[Enable Anti Form Forcing
 if ReadByte(Save+0x3524) == 6 then --In Anti Form
 	BitOr(Save+0x36C0,0x20) --Unlocks Anti Form
