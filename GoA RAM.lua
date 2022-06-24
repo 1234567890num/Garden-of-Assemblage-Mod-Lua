@@ -974,23 +974,6 @@ if true then
 		end
 	end
 end
---Alternate Party Models (adding new UCM using MEMT causes problems when shopping)
-if World == 0x0C and Place ~= 0x070C then --Mage & Knight (KH I)
-	WriteString(Obj0+0x16F0,'P_EX020_DC\0')
-	WriteString(Obj0+0x1750,'P_EX030_DC\0')
-	WriteString(Obj0+0x3250,'P_EX020_DC_ANGRY_NPC\0')
-	WriteString(Obj0+0x40F0,'H_ZZ020_DC\0')
-	WriteString(Obj0+0x4150,'H_ZZ030_DC\0')
-elseif Place == 0x2004 or Place == 0x2104 or Place == 0x2204 or Place == 0x2604 then --Casual (CoM)
-	WriteString(Obj0+0x16F0,'P_EX020_CO\0')
-	WriteString(Obj0+0x1750,'P_EX030_CO\0')
-else --Revert costume changes
-	WriteString(Obj0+0x16F0,'P_EX020\0')
-	WriteString(Obj0+0x1750,'P_EX030\0')
-	WriteString(Obj0+0x3250,'P_EX020_ANGRY_NPC\0')
-	WriteString(Obj0+0x40F0,'H_ZZ020\0')
-	WriteString(Obj0+0x4150,'H_ZZ030\0')
-end
 --Enable Secret Movie after All Worlds are Cleared
 if Place == 0x0001 then
 	local PostStorySaves = {0x1EDE,0x1D9E,0x1D3E,0x1E5E,0x1D7E,0x1D6E,0x1DDE,0x1CFD,0x1D2E,0x1E9E,0x1E1E,0x1EBE,0x1CFE} --Ordered by Portal Number
