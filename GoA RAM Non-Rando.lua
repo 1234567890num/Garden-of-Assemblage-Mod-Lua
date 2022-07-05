@@ -3482,12 +3482,6 @@ end
 Save+0x06B2 Genie Crash Fix
 [Save+0x07F0,Save+0x07FB] Mrs Potts' Minigame Location
 Save+0x1CF1 STT Dodge Roll, Twilight Thorn
-Save+0x1CF2 STT Fire
-Save+0x1CF3 STT Blizzard
-Save+0x1CF4 STT Thunder
-Save+0x1CF5 STT Cure
-Save+0x1CF6 STT Magnet
-Save+0x1CF7 STT Reflect
 Save+0x1CF8 STT Struggle Weapon
 [Save+0x1CF9,Save+0x1CFA] STT Keyblade
 Save+0x1CFC Data Path

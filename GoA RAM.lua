@@ -2469,6 +2469,12 @@ if Place == 0x0504 then
 		Spawn('Short',0x07,0x034,0x000) --Space Paranoids Computer -> Nothing
 	end
 end
+--Preserve Unknown Disk after getting taken by Moogle
+if ReadByte(Save+0x365F) > 0 then
+	BitOr(Save+0x1CF1,0x02)
+elseif ReadByte(Save+0x1CF1)&0x02 == 0x02 then
+	WriteByte(Save+0x365F,1)
+end
 --After-Demyx Checkpoint
 if ReadByte(Save+0x1D2F) == 8 and World == 0x04 then
 	if Place == 0x0404 then --Before FF Fights
@@ -3828,12 +3834,6 @@ Save+0x06B2 Genie Crash Fix
 [Save+0x1B16,Save+0x1B1B] Memory Skyscraper Spawn IDs
 [Save+0x1B1C,Save+0x1B21] The Altar of Naught Spawn IDs
 Save+0x1CF1 STT Dodge Roll, Twilight Thorn
-Save+0x1CF2 STT Fire
-Save+0x1CF3 STT Blizzard
-Save+0x1CF4 STT Thunder
-Save+0x1CF5 STT Cure
-Save+0x1CF6 STT Magnet
-Save+0x1CF7 STT Reflect
 Save+0x1CF8 STT Struggle Weapon
 [Save+0x1CF9,Save+0x1CFA] STT Keyblade
 Save+0x1CFC Data Path
