@@ -758,12 +758,13 @@ end
 --Progressive Growth Abilities & Fixed Trinity Limit Slot
 for Slot = 0,68 do
 	local Current = Save + 0x2544 + 2*Slot
-	local Ability = ReadShort(Current)
+	local Ability = ReadShort(Current) & 0x0FFF
+	local Initial = ReadShort(Current) & 0xF000
 	if Ability >= 0x05E and Ability <= 0x061 then --High Jump
 		local Slot70 = Save+0x25CE
 		WriteShort(Current,0)
 		if ReadShort(Slot70)|0x8000 < 0x805E then
-			WriteShort(Slot70,0x005E)
+			WriteShort(Slot70,0x005E|Initial)
 		elseif ReadShort(Slot70)|0x8000 < 0x8061 then
 			WriteShort(Slot70,ReadShort(Slot70)+1)
 		end
@@ -771,7 +772,7 @@ for Slot = 0,68 do
 		local Slot71 = Save+0x25D0
 		WriteShort(Current,0)
 		if ReadShort(Slot71)|0x8000 < 0x8062 then
-			WriteShort(Slot71,0x0062)
+			WriteShort(Slot71,0x0062|Initial)
 		elseif ReadShort(Slot71)|0x8000 < 0x8065 then
 			WriteShort(Slot71,ReadShort(Slot71)+1)
 		end
@@ -779,7 +780,7 @@ for Slot = 0,68 do
 		local Slot72 = Save+0x25D2
 		WriteShort(Current,0)
 		if ReadShort(Slot72)|0x8000 < 0x8234 then
-			WriteShort(Slot72,0x0234)
+			WriteShort(Slot72,0x0234|Initial)
 		elseif ReadShort(Slot72)|0x8000 < 0x8237 then
 			WriteShort(Slot72,ReadShort(Slot72)+1)
 		end
@@ -787,7 +788,7 @@ for Slot = 0,68 do
 		local Slot73 = Save+0x25D4
 		WriteShort(Current,0)
 		if ReadShort(Slot73)|0x8000 < 0x8066 then
-			WriteShort(Slot73,0x0066)
+			WriteShort(Slot73,0x0066|Initial)
 		elseif ReadShort(Slot73)|0x8000 < 0x8069 then
 			WriteShort(Slot73,ReadShort(Slot73)+1)
 		end
@@ -795,7 +796,7 @@ for Slot = 0,68 do
 		local Slot74 = Save+0x25D6
 		WriteShort(Current,0)
 		if ReadShort(Slot74)|0x8000 < 0x806A then
-			WriteShort(Slot74,0x006A)
+			WriteShort(Slot74,0x006A|Initial)
 		elseif ReadShort(Slot74)|0x8000 < 0x806D then
 			WriteShort(Slot74,ReadShort(Slot74)+1)
 		end
