@@ -974,6 +974,12 @@ if true then
 		end
 	end
 end
+--Show all items in shops (ASSEMBLY edit)
+if not OnPC then
+	WriteInt(0x264250,0)
+else
+	WriteByte(0x2F9306 - 0x56454E,0)
+end
 --Enable Secret Movie after All Worlds are Cleared
 if Place == 0x0001 then
 	local PostStorySaves = {0x1EDE,0x1D9E,0x1D3E,0x1E5E,0x1D7E,0x1D6E,0x1DDE,0x1CFD,0x1D2E,0x1E9E,0x1E1E,0x1EBE,0x1CFE} --Ordered by Portal Number
