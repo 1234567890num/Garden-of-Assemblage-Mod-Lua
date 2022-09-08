@@ -2570,7 +2570,7 @@ if Place == 0x0204 and Events(Null,0x02,0x03) and ReadByte(Save+0x36B4) > 0 then
 end
 --Cavern of Remembrance Skip Softlock Prevention
 if Place == 0x1804 and PrevPlace == 0x1504 then --Mineshaft Lowest Level
-	Spawn('Short',0x09,0x024,0x0018) --Door to Transport to Remembrance -> Mineshaft
+	Spawn('Short',0x09,0x024,0x321A) --Door to Transport to Remembrance -> Garden of Assemblage
 	Spawn('Short',0x09,0x026,0) --Approachable from All Sides
 	Spawn('Float',0x09,0x03C,5000)  --Position Y
 	Spawn('Float',0x09,0x044,10000) --Scale X
