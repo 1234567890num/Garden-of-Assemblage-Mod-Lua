@@ -750,7 +750,7 @@ if true then --No Valor, Wisdom, Master, or Final
 	end
 end
 --Invincibility on Cutscenes
-if ReadByte(Cntrl) == 3 then --Cutscnee
+if ReadByte(Cntrl) == 3 then --Cutscene
 	WriteByte(Slot1+0x1AE,0)
 else --Gameplay
 	WriteByte(Slot1+0x1AE,100)
